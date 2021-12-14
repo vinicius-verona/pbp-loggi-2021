@@ -1,4 +1,5 @@
 module PBP_loggi
+
 using Dates
 using CVRP_Structures
 using Load_instance
@@ -48,7 +49,7 @@ function cvrp(arguments::Argument)
 
     println("\n======> Start loading instance data")
     local instance  = loadInstance(arguments.input)
-    # local auxiliars = generateAuxiliars(instance)
+    local auxiliars = loadDistanceMatrix(instance.name)
     println("=> Instance name     : ", instance.name)
     println("=> Instance region   : ", instance.region)
     println("=> Instance capacity : ", instance.capacity)
@@ -87,6 +88,7 @@ function cvrp(arguments::Argument)
     # generateOutput(greedy_solution)
     # generateOutput(clarkeWright_solution)
     # generateOutput(heuristic_solution)
+    println()
 
 end
 

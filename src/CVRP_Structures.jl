@@ -1,6 +1,8 @@
 module CVRP_Structures
 
-# Instance Structures
+###############################
+##### Instance Structures #####
+###############################
 export Point
 struct Point
     lng::Float64 # Longitude
@@ -16,6 +18,24 @@ mutable struct Delivery
     index::Int64
     visiting_index::Int64
     route_index::Int64
+
+    Delivery(attributes...) = begin
+        local id    = ""
+        local point = Point(0,0)
+        local size  = 0
+        local index = 0
+        local visiting_index = 0
+        local route_index    = 0
+
+        isdefined(attributes, 1) ? id    = attributes[1] : nothing
+        isdefined(attributes, 2) ? point = attributes[2] : nothing
+        isdefined(attributes, 3) ? size  = attributes[3] : nothing
+        isdefined(attributes, 4) ? index = attributes[4] : nothing
+        isdefined(attributes, 5) ? visiting_index = attributes[5] : nothing
+        isdefined(attributes, 6) ? route_index    = attributes[6] : nothing
+
+        return new(id, point, size, index, visiting_index, route_index)
+    end
 end
 
 export CvrpData
@@ -49,6 +69,55 @@ end
 
 export CvrpAuxiliars
 mutable struct CvrpAuxiliars
+    distance_matrix::Array{Float64, 2}
+    number_pairs::Int64
+    k_adjacent::Array{Array{Pair{Float64,Int64},1}, 1} # k adjacent vertices
+
+    CvrpAuxiliars(attributes...) = begin
+        local distance_matrix = zeros(Float64, 0, 0)
+        local k_adjacent   = Array{Array{Pair{Float64,Int64},1}, 1}()
+        local number_pairs = 0
+
+        isdefined(attributes, 1) ? distance_matrix = attributes[1] : nothing
+        isdefined(attributes, 2) ? number_pairs    = attributes[2] : nothing
+        isdefined(attributes, 3) ? k_adjacent      = attributes[3] : nothing
+
+        return new(distance_matrix, number_pairs, k_adjacent)
+    end
+end
+
+
+###############################
+##### Solution Structures #####
+###############################
+export Route
+mutable struct Route
+    index::Int64
+    deliveries::Array{Delivery, 1}
+    distance::Float64
+    depot::Delivery
+
+    Route(attributes...) = begin
+        local index = 0
+        local deliveries = Array{Delivery,1}()
+        local distance   = 0.0
+        local depot::Delivery
+
+        isdefined(attributes, 1) ? index      = attributes[1] : nothing
+        isdefined(attributes, 2) ? deliveries = attributes[2] : nothing
+        isdefined(attributes, 3) ? distance   = attributes[3] : nothing
+        isdefined(attributes, 4) ? begin
+            if (attributes[4] isa Point)
+                depot = Delivery("DEPOT",attributes[4],0,0,0,0)
+            elseif (attributes[4] isa Delivery)
+                depot = attributes[4]
+            else
+                throw("A Depot must be passed as either a Delivery or a Point")
+            end
+        end : throw("A Depot must be passed as either a Delivery or a Point")
+
+        return new(index, deliveries, distance, depot)
+    end
 end
 
 end # module

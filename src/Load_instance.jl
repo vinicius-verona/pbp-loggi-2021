@@ -1,10 +1,12 @@
 module Load_instance
+
 using JSON
-import CVRP_Structures: Point, Delivery, CvrpData
+using GZip
+import CVRP_Structures: Point, Delivery, CvrpData, CvrpAuxiliars
 
 export loadInstance
 """
-    loadInstance(input::String)
+    loadInstance(input::String)::CvrpData
 
 Read JSON instance.
 
@@ -14,7 +16,7 @@ Read JSON instance.
 **Returns:**
 * `data` - returns the dictionary parsed into `CvrpData` type
 """
-function loadInstance(input::String)
+function loadInstance(input::String)::CvrpData
     
     let file = JSON.parse(open(input, "r"))
         local name   = file["name"]
@@ -40,6 +42,26 @@ function loadInstance(input::String)
         return CvrpData(name, region, origin, capacity, deliveries, Int64(round(sum_sizes, RoundUp)))
     end
 
+end
+
+export loadDistanceMatrix
+"""
+    loadDistanceMatrix(instance::String)::CvrpAuxiliars
+
+Load zipped precompiled distance matrix for a given instance.
+
+**Parameters:**
+* `instance` - CVRP instance name.
+
+**Returns:**
+* `cvrp_auxiliar` - returns the generated auxiliar data (number of pairs and distance matrix)
+"""
+function loadDistanceMatrix(instance::String)::CvrpAuxiliars
+    local file = GZip.open("$(@__DIR__)/../data/DistanceMatrix/$instance.json.gz")
+    local parsed_file = JSON.parse(file)
+    distances = reduce(hcat, parsed_file["Distance_Table"])
+
+    return CvrpAuxiliars(distances, size(distances)[1] * size(distances)[2])
 end
 
 end # module
