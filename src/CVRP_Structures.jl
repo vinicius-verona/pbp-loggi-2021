@@ -97,26 +97,38 @@ mutable struct Route
     distance::Float64
     depot::Delivery
 
+    capacity::Int64
+    free::Int64
+
     Route(attributes...) = begin
         local index = 0
         local deliveries = Array{Delivery,1}()
         local distance   = 0.0
         local depot::Delivery
+        local capacity = 0
+        local free = 0
 
         isdefined(attributes, 1) ? index      = attributes[1] : nothing
         isdefined(attributes, 2) ? deliveries = attributes[2] : nothing
         isdefined(attributes, 3) ? distance   = attributes[3] : nothing
         isdefined(attributes, 4) ? begin
             if (attributes[4] isa Point)
-                depot = Delivery("DEPOT",attributes[4],0,0,0,0)
+                depot = Delivery("DEPOT",attributes[4], 0, 0, 1, index)
+            
             elseif (attributes[4] isa Delivery)
                 depot = attributes[4]
+            
             else
                 throw("A Depot must be passed as either a Delivery or a Point")
             end
-        end : throw("A Depot must be passed as either a Delivery or a Point")
 
-        return new(index, deliveries, distance, depot)
+            insert!(deliveries, 1, depot)
+        end : throw("A Depot must be passed as either a Delivery or a Point")
+        
+        isdefined(attributes, 5) ? capacity = attributes[5] : nothing
+        isdefined(attributes, 6) ? free     = attributes[6] : free = capacity
+
+        return new(index, deliveries, distance, depot, capacity, free)
     end
 end
 

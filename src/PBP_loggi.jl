@@ -62,7 +62,7 @@ function cvrp(arguments::Argument)
     execution_stats.greedy_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.greedy_initial_timestamp)
 
-    # local greedy_solution = greedySolution(instance)
+    local greedy_solution = greedySolution(instance, auxiliars)
     execution_stats.greedy_completion_timestamp = now()
     
 
