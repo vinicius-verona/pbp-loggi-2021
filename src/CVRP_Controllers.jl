@@ -12,17 +12,29 @@ getDistance(cvrp_aux::CvrpAuxiliars, d1::Delivery, d2::Delivery) = cvrp_aux.dist
 
 
 export pushDelivery!
-function pushDelivery!!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64 = -1)
+"""
+    pushDelivery!!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64)
 
-    if (pos != -1)
-        pos = length(route.deliveries)
+Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it inserts in the last position.
+"""
+function pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64 = -1)
+
+    if (pos == -1)
+        pos = length(route.deliveries) + 1
     end
 
     insert!(route.deliveries, pos, d)
+    route.free -= d.size
 
-    # local previous = 0; # Previous Delivery
-    # local next = 0; # Next Delivery
-    # route.free -= getDistance(cvrp_aux, route.deliveries[pos])
+    local previous = isassigned(route.deliveries, pos - 1) ? route.deliveries[pos-1] : nothing; # Previous Delivery
+    local next = isassigned(route.deliveries, pos + 1) ? route.deliveries[pos+1] : nothing; # Next Delivery
+    
+    previous !== nothing ? route.distance += getDistance(cvrp_aux, previous, d) : nothing
+    next !== nothing ? route.distance += getDistance(cvrp_aux, d, next) : nothing
+    
+    if (previous !== nothing && next !== nothing) 
+        route.distance -= getDistance(cvrp_aux, previous, next)
+    end
 
 end
 

@@ -3,6 +3,7 @@ module PBP_loggi
 using Dates
 using CVRP_Structures
 using Load_instance
+using InitialSolution
 
 
 # Execution Structures
@@ -53,7 +54,7 @@ function cvrp(arguments::Argument)
     println("=> Instance name     : ", instance.name)
     println("=> Instance region   : ", instance.region)
     println("=> Instance capacity : ", instance.capacity)
-    println("=> Instance min # of vehicles : ", instance.min_number_routes)
+    println("=> Instance min # of vehicles : ", instance.min_number_routes, " routes")
     
     local execution_stats = ExecStatistic(now(), now(), now(), now(), now(), now())
 
@@ -61,9 +62,11 @@ function cvrp(arguments::Argument)
     println("\n======> Start greedy solution")
     execution_stats.greedy_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.greedy_initial_timestamp)
-
+    
     local greedy_solution = greedySolution(instance, auxiliars)
     execution_stats.greedy_completion_timestamp = now()
+    println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, greedy_solution)), " routes")
+    println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
     
 
     # Clarke-Wright Solution
