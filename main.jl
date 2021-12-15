@@ -1,5 +1,5 @@
 push!(LOAD_PATH, "src/")
-using PBP_loggi
+using PBP_Loggi
 
 """
     main(ARGS)

@@ -1,4 +1,4 @@
-module InitialSolution
+module Initial_Solution
 
 using CVRP_Structures: Delivery, CvrpData, CvrpAuxiliars, Route
 using CVRP_Controllers: getDistance, pushDelivery!

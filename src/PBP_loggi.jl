@@ -1,9 +1,10 @@
-module PBP_loggi
+module PBP_Loggi
 
 using Dates
 using CVRP_Structures
-using Load_instance
-using InitialSolution
+using Load_Instance
+using Initial_Solution: greedySolution
+using Heuristic_Solution: ils
 
 
 # Execution Structures
@@ -83,7 +84,8 @@ function cvrp(arguments::Argument)
     execution_stats.heuristic_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.heuristic_initial_timestamp)
 
-    # local heuristic_solution = ilsSolution(instance, clarkeWright_solution)
+    local heuristic_solution = ils(instance, auxiliars, greedy_solution)
+    # local heuristic_solution = ils(instance, auxiliars, clarkeWright_solution)
     execution_stats.heuristic_completion_timestamp = now()
 
 

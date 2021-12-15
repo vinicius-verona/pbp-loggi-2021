@@ -1,4 +1,4 @@
-module Load_instance
+module Load_Instance
 
 using JSON
 using GZip
