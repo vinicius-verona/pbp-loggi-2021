@@ -73,7 +73,7 @@ function getInsertionDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64,
         throw("Empty string.")
     end
     if (length(route.deliveries) === 0)
-        throw("Empty route. Route must have at leat two depot as deliveries")
+        throw("Empty route. Route must have at least two depot as deliveries")
     end
 
     let value = 0
@@ -107,10 +107,10 @@ function getInsertionDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64,
         throw("Empty string.")
     end
     if (length(route.deliveries) === 0)
-        throw("Empty route. Route must have at leat two depot as deliveries")
+        throw("Empty route. Route must have at least two depot as deliveries")
     end
     if (length(route.deliveries) < gap)
-        throw("The gap is too big. Route must have at leat gap deliveries + two depot deliveries.")
+        throw("The gap is too big. Route must have at least gap deliveries + two depot deliveries.")
     end
 
     let value = 0
@@ -146,7 +146,7 @@ function getRemovalDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, l
         throw("Empty route.")
     end
     if (length(route.deliveries) < length)
-        throw("The string length is too big. Route must have at leat length deliveries + two depot deliveries.")
+        throw("The string length is too big. Route must have at least length deliveries + two depot deliveries.")
     end
 
     let value = 0
