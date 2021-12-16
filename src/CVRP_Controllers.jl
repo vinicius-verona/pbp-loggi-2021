@@ -13,7 +13,7 @@ getDistance(cvrp_aux::CvrpAuxiliars, d1::Delivery, d2::Delivery) = cvrp_aux.dist
 
 export pushDelivery!
 """
-    pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64)
+    pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64 = -1)
 
 Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it inserts in the last position.
 """
@@ -39,6 +39,7 @@ function pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::
 end
 
 
+export getStringDistance
 """
     getStringDistance(cvrp_aux::CvrpAuxiliars, string::Array{Delivery, 1})
 
@@ -59,6 +60,7 @@ function getStringDistance(cvrp_aux::CvrpAuxiliars, string::Array{Delivery, 1})
 end
 
 
+export getInsertionDistance
 """
     getInsertionDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, string::Array{Delivery, 1})
 
@@ -85,11 +87,13 @@ function getInsertionDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64,
         value += getDistance(cvrp_aux, string[end], neighbor)
 
         return value
+
     end
 
 end
 
 
+export getInsertionDistance
 """
     getInsertionDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, gap::Int64, string::Array{Delivery, 1})
 
@@ -120,10 +124,13 @@ function getInsertionDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64,
         value += getDistance(cvrp_aux, string[end], neighbor)
 
         return value
+
     end
 
 end
 
+
+export getRemovalDistance
 """
     getRemovalDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, length::Int64)
 
@@ -153,6 +160,7 @@ function getRemovalDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, l
         value += getDistance(cvrp_aux, route.deliveries[idx + length - 1], neighbor)
 
         return value
+
     end
 
 end
