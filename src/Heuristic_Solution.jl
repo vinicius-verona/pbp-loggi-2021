@@ -2,7 +2,29 @@ module Heuristic_Solution
 
 using CVRP_Structures: CvrpData, CvrpAuxiliars, Route
 using CVRP_Controllers: getDistance, pushDelivery!
+using Neighborhood
 using Dates
+
+export IlsController
+mutable struct IlsController
+    initial_timestamp::DateTime
+    duration::Int64    
+    original_solution::Float64
+    edited_solution::Float64
+    best_solution::Float64
+
+    route_indexers::Array{Int64, 2}
+
+end
+
+mutable struct RnaController
+    initial_perturb::Int64
+    perturb_max::Int64
+    iter_max::Int64
+    rna_max::Int64
+end
+
+# route_ids::Array{Int64, 2}
 
 export ils
 function ils(instance::CvrpData, cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1})
@@ -19,8 +41,8 @@ function ils(instance::CvrpData, cvrp_aux::CvrpAuxiliars, solution::Array{Route,
     local shift_3  = Shift(3)
     local shift_4  = Shift(4)
 
-    local moves::Array{Neighborhood, 1} = [swap_1x1, swap_1x2, swap_2x1, swap_2x2,
-                                           shift_1, shift_2, shift_3, shift_4]
+    local moves::Array{Neighbor, 1} = [swap_1x1, swap_1x2, swap_2x1, swap_2x2,
+                                       shift_1, shift_2, shift_3, shift_4]
     
     local controller = IlsController()
 end

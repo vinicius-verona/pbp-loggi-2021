@@ -45,4 +45,6 @@ main(ARGS) = begin
 
 end
 
-main(ARGS)
+if (!isinteractive())
+    main(ARGS)
+end

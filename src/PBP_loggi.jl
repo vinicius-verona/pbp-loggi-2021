@@ -4,7 +4,7 @@ using Dates
 using CVRP_Structures
 using Load_Instance
 using Initial_Solution: greedySolution
-using Heuristic_Solution: ils
+# using Heuristic_Solution: ils
 
 
 # Execution Structures
@@ -84,7 +84,7 @@ function cvrp(arguments::Argument)
     execution_stats.heuristic_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.heuristic_initial_timestamp)
 
-    local heuristic_solution = ils(instance, auxiliars, greedy_solution)
+    # local heuristic_solution = ils(instance, auxiliars, greedy_solution)
     # local heuristic_solution = ils(instance, auxiliars, clarkeWright_solution)
     execution_stats.heuristic_completion_timestamp = now()
 
@@ -94,7 +94,7 @@ function cvrp(arguments::Argument)
     # generateOutput(clarkeWright_solution)
     # generateOutput(heuristic_solution)
     println()
-
+    
 end
 
 
