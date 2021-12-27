@@ -1,5 +1,6 @@
 push!(LOAD_PATH, "src/")
 using PBP_Loggi
+using Cluster_Instance
 
 """
     main(ARGS)

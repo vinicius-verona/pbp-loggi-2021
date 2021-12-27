@@ -1,5 +1,7 @@
 module CVRP_Structures
 
+using Dates
+
 ###############################
 ##### Instance Structures #####
 ###############################
@@ -130,6 +132,12 @@ mutable struct Route
 
         return new(index, deliveries, distance, depot, capacity, free)
     end
+end
+
+export Model # Used in KMeans
+mutable struct Model
+    centroids::Array{Point, 1}
+    # model::KmeansResult{Array{Float64,2},Float64,Float64}
 end
 
 end # module
