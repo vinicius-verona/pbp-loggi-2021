@@ -4,7 +4,6 @@ using Dates
 using CVRP_Structures
 using Load_Instance
 using Initial_Solution: greedySolution
-# using Heuristic_Solution: ils
 
 
 # Execution Structures
