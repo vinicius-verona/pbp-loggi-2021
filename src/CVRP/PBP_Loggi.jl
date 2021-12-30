@@ -4,7 +4,6 @@ using Dates
 using CVRP_Structures
 using Load_Instance
 using Initial_Solution: greedySolution
-using Cluster_Instance: train
 
 
 # Execution Structures
@@ -34,11 +33,14 @@ end
 
 mutable struct ExecStatistic
 
-    train_initial_timestamp::DateTime
-    train_completion_timestamp::DateTime
-
     greedy_initial_timestamp::DateTime
     greedy_completion_timestamp::DateTime
+
+    cw_initial_timestamp::DateTime
+    cw_completion_timestamp::DateTime
+    
+    heuristic_initial_timestamp::DateTime
+    heuristic_completion_timestamp::DateTime
 
 end
 
@@ -54,41 +56,41 @@ function cvrp(arguments::Argument)
     println("=> Instance capacity : ", instance.capacity)
     println("=> Instance min # of vehicles : ", instance.min_number_routes, " routes")
     
-    local execution_stats = ExecStatistic(now(), now(), now(), now())
+    local execution_stats = ExecStatistic(now(), now(), now(), now(), now(), now())
 
-    # Clustering instance
-    println("\n======> Start clustering instance")
-    execution_stats.train_initial_timestamp = now()
-    println("=> Start timestamp : ", execution_stats.train_initial_timestamp)
-    
-    local model = train(instance.region, 1)
-    execution_stats.train_completion_timestamp = now()
-    println("=> # of clusters   : ", length(model.centroids), " centroids")
-    println("=> Compl. timestamp: ", execution_stats.train_completion_timestamp)
-    
     # Greedy Solution
     println("\n======> Start greedy solution")
     execution_stats.greedy_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.greedy_initial_timestamp)
     
-    # local greedy_solution = greedySolution(instance, auxiliars)
+    local greedy_solution = greedySolution(instance, auxiliars)
     execution_stats.greedy_completion_timestamp = now()
-    # println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, greedy_solution)), " routes")
+    println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, greedy_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
     
 
+    # Clarke-Wright Solution
+    println("\n======> Start Clarke-Wright solution")
+    execution_stats.cw_initial_timestamp = now()
+    println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
+
+    # local clarkeWright_solution = clarkeWrightSolution(instance)
+    execution_stats.cw_completion_timestamp = now()
+
+
     # Heuristic Solution
-    # println("\n======> Start Heuristic solution")
-    # execution_stats.heuristic_initial_timestamp = now()
-    # println("=> Start timestamp : ", execution_stats.heuristic_initial_timestamp)
+    println("\n======> Start Heuristic solution")
+    execution_stats.heuristic_initial_timestamp = now()
+    println("=> Start timestamp : ", execution_stats.heuristic_initial_timestamp)
 
     # local heuristic_solution = ils(instance, auxiliars, greedy_solution)
     # local heuristic_solution = ils(instance, auxiliars, clarkeWright_solution)
-    # execution_stats.heuristic_completion_timestamp = now()
+    execution_stats.heuristic_completion_timestamp = now()
 
 
     # Generate Output
     # generateOutput(greedy_solution)
+    # generateOutput(clarkeWright_solution)
     # generateOutput(heuristic_solution)
     println()
     
@@ -110,8 +112,8 @@ function displayHelp()
     print("|> [ --help   → -h ]  |>  Not Required  |> Display this menu                         |\n")
     print("|> [ --seed   → -s ]  |>  Not Required  |> Set seed used                             |\n")
     print("|> [ --input  → -i ]  |>    Required    |> Set instance used                         |\n")
-    # print("|> [ --timer  → -t ]  |>  Not Required  |> Set heuristic timer in seconds            |\n")
-    # print("|> [ --k-near → -k ]  |>  Not Required  |> Set number of stored k-nearest deliveries |\n")
+    print("|> [ --timer  → -t ]  |>    Required    |> Set heuristic timer in seconds            |\n")
+    print("|> [ --k-near → -k ]  |>    Required    |> Set number of stored k-nearest deliveries |\n")
     print("|                                                                                    |\n")
     print(" ------------------------------------------------------------------------------------\n\n")
     
@@ -120,14 +122,14 @@ function displayHelp()
     print("|> -h → <JSON> → NOT REQUIRED |\n")
     print("|> -s → <INT.> → NOT REQUIRED |\n")
     print("|> -i → <STR.> →   REQUIRED   |\n")
-    # print("|> -t → <INT.> → NOT REQUIRED |\n")
-    # print("|> -k → <INT.> → NOT REQUIRED |\n")
+    print("|> -t → <INT.> →   REQUIRED   |\n")
+    print("|> -k → <INT.> →   REQUIRED   |\n")
     print("|                             |\n")
     print(" -----------------------------\n\n")
     
     print(" -------------------------------- Execution Example ---------------------------------\n")
     print("|                                                                                    |\n")
-    print("|> Syntax: julia -O 3 main.jl -i path/instance.json -s 1                             |\n")
+    print("|> Syntax: julia -O 3 main.jl -i path/instance.json -s 1 -t 900 -k 100               |\n")
     print("|                                                                                    |\n")
     print(" ------------------------------------------------------------------------------------\n\n")
 

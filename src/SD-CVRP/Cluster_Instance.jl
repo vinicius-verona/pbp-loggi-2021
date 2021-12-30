@@ -13,7 +13,7 @@ export train
 function train(region::String="df-0", initial_day::Int64=0, limit_day::Int64=89)
     
     # Load directory
-    local train_dir   = "$(@__DIR__)/../data/input/train/$region"
+    local train_dir   = "$(@__DIR__)/../../data/input/train/$region"
     local train_files = readdir(train_dir, sort=true)
     local inverse_region = "$(split(region, "-")[2])-$(split(region, "-")[1])"
 
