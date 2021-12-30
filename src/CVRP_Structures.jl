@@ -1,6 +1,7 @@
 module CVRP_Structures
 
 using Dates
+using ParallelKMeans: KmeansResult
 
 ###############################
 ##### Instance Structures #####
@@ -73,7 +74,7 @@ export CvrpAuxiliars
 mutable struct CvrpAuxiliars
     distance_matrix::Array{Float64, 2}
     number_pairs::Int64
-    k_adjacent::Array{Array{Pair{Float64,Int64},1}, 1} # k adjacent vertices
+    k_adjacent::Array{Array{Pair{Float64,Int64}, 1}, 1} # k adjacent vertices
 
     CvrpAuxiliars(attributes...) = begin
         local distance_matrix = zeros(Float64, 0, 0)
@@ -137,7 +138,17 @@ end
 export Model # Used in KMeans
 mutable struct Model
     centroids::Array{Point, 1}
-    # model::KmeansResult{Array{Float64,2},Float64,Float64}
+    model::KmeansResult{Array{Float64,2},Float64,Float64}
+
+    Model(attributes...) = begin
+        local centroids = Array{Point, 1}()
+        local model::KmeansResult{Array{Float64,2},Float64,Float64}
+
+        isdefined(attributes, 1) ? centroids = attributes[1] : nothing
+        isdefined(attributes, 2) ? model     = attributes[2] : throw("Model not defined. Type for model: KmeansResult{Array{Float64,2},Float64,Float64}")
+
+        return new(centroids, model)
+    end
 end
 
 end # module

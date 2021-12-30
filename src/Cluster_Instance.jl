@@ -4,7 +4,7 @@ using ParallelKMeans
 using Random
 using JSON
 using Load_Instance: loadInstance
-import CVRP_Structures: Point
+import CVRP_Structures: Point, Model, CvrpData
 
 export train
 """
@@ -41,12 +41,63 @@ function train(region::String="df-0", initial_day::Int64=0, limit_day::Int64=89)
         
     end
 
-    # Read instance and store
-    local points::Array{Array{Point,1}, 1} = []
-    for i in train_files
-        push!(points, map(x-> x.point, loadInstance("$train_dir/$i").deliveries))
+    # Read instance and store points
+    local points::Array{Array{Float64,1},1} = []
+    local number_of_routes = 0
+
+    for i in train_files[1:end]
+        local instance_data = getInstanceData(loadInstance("$train_dir/$i"))
+        points = cat(points, instance_data[1], dims=1)
+        number_of_routes += instance_data[2]
+    end
+    
+    number_of_routes = Int(round(number_of_routes / length(train_files), RoundUp))
+
+    # Create model by clustering delivery points of training instances
+    local matrix = hcat(points...)
+    local rng    = Random.seed!(1)
+    local model  = kmeans(Yinyang(), matrix, number_of_routes; rng=rng)
+    local centroids = extractCentroids(model.centers)
+
+
+    return Model(centroids, model)
+
+end
+
+"""
+    getInstanceData(instance::CvrpData)
+
+For a given instance, return delivery points (`Array{Array{Float64,1},1}`) and the instance's minimum number of routes.
+"""
+function getInstanceData(instance::CvrpData)
+
+    local points::Array{Array{Float64,1},1} = []
+    local size = 0
+    for d in instance.deliveries
+        size += d.size
+        push!(points, [d.point.lat;d.point.lng])
     end
 
+    return points, Int(round(size/instance.capacity, RoundUp))
+
+end
+
+"""
+    extractCentroids(matrix::Array{Float64, 2})
+
+For a given matrix of centroids, create and return an array of type `Point` with each centroid coordinates.
+"""
+function extractCentroids(matrix::Array{Float64, 2})
+
+    local centroids = Array{Point, 1}()
+    local length = size(matrix)[2]
+    
+    for i = 1:length
+        push!(centroids, Point(matrix[2,i], matrix[1,i]))
+    end
+
+    return centroids
+    
 end
 
 end # module

@@ -1,15 +1,23 @@
 module CVRP_Controllers
 
-using CVRP_Structures: Delivery, CvrpAuxiliars, Route
+using CVRP_Structures: Point, Delivery, CvrpAuxiliars, Route
+using Distances
 
 export getDistance
 """
-    getDistance(cvrp_aux::CvrpAuxiliars, a::Delivery, b::Delivery)
+    getDistance(cvrp_aux::CvrpAuxiliars, a::Delivery, b::Delivery)::Float64
 
 Get distance between delivery `d1` and `d2`.
 """
-getDistance(cvrp_aux::CvrpAuxiliars, d1::Delivery, d2::Delivery) = cvrp_aux.distance_matrix[d1.index + 1, d2.index + 1]
+getDistance(cvrp_aux::CvrpAuxiliars, d1::Delivery, d2::Delivery)::Float64 = cvrp_aux.distance_matrix[d1.index + 1, d2.index + 1]
 
+export getDistance
+"""
+    getDistance(p1::Point, p2::Point)::Float64
+
+Using [haversine](https://en.wikipedia.org/wiki/Haversine_formula) formula, calculates distance between `p1` and `p2`.
+"""
+getDistance(p1::Point, p2::Point)::Float64 = haversine((p1.lng, p1.lat), (p2.lng, p2.lat))
 
 export pushDelivery!
 """

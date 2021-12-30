@@ -2,6 +2,9 @@ push!(LOAD_PATH, "src/")
 using PBP_Loggi
 using Cluster_Instance
 
+train()
+exit()
+
 """
     main(ARGS)
 
