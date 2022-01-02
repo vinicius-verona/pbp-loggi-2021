@@ -71,9 +71,9 @@ function cvrp(arguments::Argument)
     execution_stats.greedy_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.greedy_initial_timestamp)
     
-    # local greedy_solution = greedySolution(instance, auxiliars)
+    local greedy_solution = greedySolution(instance, auxiliars, model)
     execution_stats.greedy_completion_timestamp = now()
-    # println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, greedy_solution)), " routes")
+    println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, greedy_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
     
 

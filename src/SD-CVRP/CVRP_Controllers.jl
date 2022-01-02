@@ -25,7 +25,7 @@ export pushDelivery!
 
 Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it inserts in the last position.
 """
-function pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64 = -1)
+@inline function pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64 = -1)
 
     if (pos == -1)
         pos = length(route.deliveries) + 1
@@ -75,7 +75,7 @@ export getInsertionDistance
 For a given string, return insertion distance for inserting the string of size into `route` starting in `idx`.
 If returned value is positive, the insertion is not profitable.
 """
-function getInsertionDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, string::Array{Delivery, 1})
+@inline function getInsertionDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, string::Array{Delivery, 1})
 
     if (length(string) === 0)
         throw("Empty string.")
@@ -109,7 +109,7 @@ For a given string, return insertion distance for inserting the string of size i
 and disconsidering the next `gap` deliveries after `idx`.
 If returned value is positive, the insertion is not profitable.
 """
-function getInsertionDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, gap::Int64, string::Array{Delivery, 1})
+@inline function getInsertionDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, gap::Int64, string::Array{Delivery, 1})
 
     if (length(string) === 0)
         throw("Empty string.")
@@ -145,7 +145,7 @@ export getRemovalDistance
 For a given route, return removal distance for string of size `length` starting in `idx`.
 If returned value is negative, the removal is not profitable.
 """
-function getRemovalDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, length::Int64)
+@inline function getRemovalDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, length::Int64)
 
     if (idx === 1)
         throw("DEPOT selected in string.")
@@ -170,6 +170,49 @@ function getRemovalDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, l
         return value
 
     end
+
+end
+
+export findBestRoute
+"""
+    findBestRoute(type::Symbol, cvrp_auxiliar::CvrpAuxiliars, routes::Array{Route, 1}, delivery::Delivery)
+For a given search type (`:Extremes`, for example), find best route among `routes`
+to insert `delivery`.
+"""
+findBestRoute(type::Symbol, cvrp_auxiliar::CvrpAuxiliars, routes::Array{Route, 1}, delivery::Delivery) = type == :Extremes ? 
+    findBestRoute(Val(:Extremes), cvrp_auxiliar, routes, delivery) :
+    nothing # findBestRoute(Val(:FullRoute), routes, delivery)
+
+"""
+For the `:Extremes` analysis, for each route, the desired delivery is compared to be inserted either as 
+the first serviced customer or the last.
+"""
+@inline function findBestRoute(::Val{:Extremes}, cvrp_auxiliar::CvrpAuxiliars, routes::Array{Route, 1}, delivery::Delivery)
+
+    local route = nothing
+    local position = 0
+    local distance = typemax(Float64)
+    foreach(r -> begin
+
+        # Depot -> new delivery
+        local dist = getDistance(cvrp_auxiliar, r.deliveries[1], delivery)
+        if (dist < distance)
+            distance = dist
+            position = 2
+            route = r
+        end
+
+        # Last delivery in route -> new delivery
+        dist = getDistance(cvrp_auxiliar, r.deliveries[end], delivery)
+        if (dist < distance)
+            distance = dist
+            position = length(r.deliveries) + 1
+            route = r
+        end
+
+    end, routes)
+
+    return route, position
 
 end
 

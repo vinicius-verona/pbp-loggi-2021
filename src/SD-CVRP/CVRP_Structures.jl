@@ -1,5 +1,7 @@
 module CVRP_Structures
 
+# TODO: Add typed kwargs to constructors
+
 using Dates
 using ParallelKMeans: KmeansResult
 
@@ -102,6 +104,7 @@ mutable struct Route
 
     capacity::Int64
     free::Int64
+    centroid::Point
 
     Route(attributes...) = begin
         local index = 0
@@ -110,6 +113,7 @@ mutable struct Route
         local depot::Delivery
         local capacity = 0
         local free = 0
+        local centroid = Point(0.0, 0.0)
 
         isdefined(attributes, 1) ? index      = attributes[1] : nothing
         isdefined(attributes, 2) ? deliveries = attributes[2] : nothing
@@ -117,7 +121,7 @@ mutable struct Route
         isdefined(attributes, 4) ? begin
             if (attributes[4] isa Point)
                 depot = Delivery("DEPOT",attributes[4], 0, 0, 1, index)
-            
+                
             elseif (attributes[4] isa Delivery)
                 depot = attributes[4]
             
@@ -130,8 +134,9 @@ mutable struct Route
         
         isdefined(attributes, 5) ? capacity = attributes[5] : nothing
         isdefined(attributes, 6) ? free     = attributes[6] : free = capacity
+        isdefined(attributes, 7) ? centroid = attributes[7] : nothing
 
-        return new(index, deliveries, distance, depot, capacity, free)
+        return new(index, deliveries, distance, depot, capacity, free, centroid)
     end
 end
 

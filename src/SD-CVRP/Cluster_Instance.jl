@@ -4,11 +4,16 @@ using ParallelKMeans
 using Random
 using JSON
 using Load_Instance: loadInstance
-import CVRP_Structures: Point, Model, CvrpData
+using CVRP_Structures: Point, Model, CvrpData, Delivery
+using CVRP_Controllers: getDistance
 
 export train
 """
     train(region::String="df-0", initial_day::Int64=0; limit_day::Int64=89)
+
+For a given region, read instances starting at day `initial_day` and stopping at `limit_day`.
+With each instance, store enough information to create a cluster and facilitate finding vehicles
+to service a client.
 """
 function train(region::String="df-0", initial_day::Int64=0, limit_day::Int64=89)
     
@@ -61,6 +66,33 @@ function train(region::String="df-0", initial_day::Int64=0, limit_day::Int64=89)
 
 
     return Model(centroids, model)
+
+end
+
+export predict
+"""
+    predict(centroids::Array{Point, 1}, delivery::Delivery)
+
+For a given delivery, predict in which clustered region does the delivery belong to.
+
+**Parameters:**
+* `centroids` - Array with the coordinates for each cluster centroid.
+* `delivery` - Delivery that must be fit to a region.
+
+**Returns:**
+* `::Point` - A reference to the selected centroid.
+"""
+@inline function predict(centroids::Array{Point, 1}, delivery::Delivery)
+
+    local center::Point = Point(0.0, 0.0)
+    local min_dist = typemax(Float64)
+    
+    foreach(centroid -> begin
+        local dist = getDistance(centroid, delivery.point)
+        (dist < min_dist) ? (center = centroid; min_dist = dist) : nothing
+    end, centroids)
+    
+    return center
 
 end
 
