@@ -3,8 +3,10 @@ module PBP_Loggi
 using Dates
 using CVRP_Structures
 using Load_Instance
-using Initial_Solution: greedySolution
 using Cluster_Instance: train
+using Initial_Solution: greedySolution
+using ClarkeWright: clarkewrightSolution
+using Plots 
 
 
 # Execution Structures
@@ -37,8 +39,11 @@ mutable struct ExecStatistic
     train_initial_timestamp::DateTime
     train_completion_timestamp::DateTime
 
-    greedy_initial_timestamp::DateTime
-    greedy_completion_timestamp::DateTime
+    greedy_initial_timestamp::DateTime # Greedy Solution timestamp
+    greedy_completion_timestamp::DateTime # Greedy Solution timestamp
+
+    cw_initial_timestamp::DateTime # Clarke-Wright Solution timestamp
+    cw_completion_timestamp::DateTime # Clarke-Wright Solution timestamp
 
 end
 
@@ -52,16 +57,17 @@ function cvrp(arguments::Argument)
     println("=> Instance name     : ", instance.name)
     println("=> Instance region   : ", instance.region)
     println("=> Instance capacity : ", instance.capacity)
+    println("=> Instance # of deliveries   : ", length(instance.deliveries))
     println("=> Instance min # of vehicles : ", instance.min_number_routes, " routes")
     
-    local execution_stats = ExecStatistic(now(), now(), now(), now())
+    local execution_stats = ExecStatistic(now(), now(), now(), now(), now(), now())
 
     # Clustering instance
     println("\n======> Start clustering instance")
     execution_stats.train_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.train_initial_timestamp)
     
-    local model = train(instance.region, 1)
+    local model = train(instance.region)
     execution_stats.train_completion_timestamp = now()
     println("=> # of clusters   : ", length(model.centroids), " centroids")
     println("=> Compl. timestamp: ", execution_stats.train_completion_timestamp)
@@ -75,6 +81,16 @@ function cvrp(arguments::Argument)
     execution_stats.greedy_completion_timestamp = now()
     println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, greedy_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
+    
+    # Clarke-Wright Solution
+    println("\n======> Start Clrke-Wright solution")
+    execution_stats.cw_initial_timestamp = now()
+    println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
+    
+    local cw_solution = clarkewrightSolution(instance, auxiliars)
+    execution_stats.cw_completion_timestamp = now()
+    println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, cw_solution)), " routes")
+    println("=> Compl. timestamp: ", execution_stats.cw_completion_timestamp)
     
 
     # Heuristic Solution
@@ -90,8 +106,27 @@ function cvrp(arguments::Argument)
     # Generate Output
     # generateOutput(greedy_solution)
     # generateOutput(heuristic_solution)
+
+    println("\n======> Results (Distance in KM)")
+    println("Greedy       :", sum(map(x -> x.distance, greedy_solution)) / 1000)
+    println("Clarke-Wright:", sum(map(x -> x.distance, cw_solution)) / 1000)
+
+    # Plot routes
+    plotRoute(greedy_solution)
+    
+
     println()
     
+end
+
+function plotRoute(routes)
+
+    foreach(r -> begin
+        local points = map(x->(x.point.lng, x.point.lat), r.deliveries)
+        plot!(points)
+    end, routes)
+    savefig("myplot.png")
+
 end
 
 
@@ -110,8 +145,6 @@ function displayHelp()
     print("|> [ --help   → -h ]  |>  Not Required  |> Display this menu                         |\n")
     print("|> [ --seed   → -s ]  |>  Not Required  |> Set seed used                             |\n")
     print("|> [ --input  → -i ]  |>    Required    |> Set instance used                         |\n")
-    # print("|> [ --timer  → -t ]  |>  Not Required  |> Set heuristic timer in seconds            |\n")
-    # print("|> [ --k-near → -k ]  |>  Not Required  |> Set number of stored k-nearest deliveries |\n")
     print("|                                                                                    |\n")
     print(" ------------------------------------------------------------------------------------\n\n")
     
@@ -120,8 +153,6 @@ function displayHelp()
     print("|> -h → <JSON> → NOT REQUIRED |\n")
     print("|> -s → <INT.> → NOT REQUIRED |\n")
     print("|> -i → <STR.> →   REQUIRED   |\n")
-    # print("|> -t → <INT.> → NOT REQUIRED |\n")
-    # print("|> -k → <INT.> → NOT REQUIRED |\n")
     print("|                             |\n")
     print(" -----------------------------\n\n")
     

@@ -1,6 +1,5 @@
 push!(LOAD_PATH, "src/SD-CVRP")
 using PBP_Loggi
-using Cluster_Instance
 
 """
     main(ARGS)

@@ -19,6 +19,7 @@ Using [haversine](https://en.wikipedia.org/wiki/Haversine_formula) formula, calc
 """
 getDistance(p1::Point, p2::Point)::Float64 = haversine((p1.lng, p1.lat), (p2.lng, p2.lat))
 
+# TODO: Alterar campo route para final da assinatura da função
 export pushDelivery!
 """
     pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64 = -1)
@@ -178,10 +179,13 @@ export findBestRoute
     findBestRoute(type::Symbol, cvrp_auxiliar::CvrpAuxiliars, routes::Array{Route, 1}, delivery::Delivery)
 For a given search type (`:Extremes`, for example), find best route among `routes`
 to insert `delivery`.
+
+**Types:**
+* `:Extremes` - Check both extremes insertion cost of a route.
 """
 findBestRoute(type::Symbol, cvrp_auxiliar::CvrpAuxiliars, routes::Array{Route, 1}, delivery::Delivery) = type == :Extremes ? 
     findBestRoute(Val(:Extremes), cvrp_auxiliar, routes, delivery) :
-    nothing # findBestRoute(Val(:FullRoute), routes, delivery)
+    nothing # findBestRoute(Val(:FullRoute), cvrp_auxiliar, routes, delivery)
 
 """
 For the `:Extremes` analysis, for each route, the desired delivery is compared to be inserted either as 
@@ -194,20 +198,24 @@ the first serviced customer or the last.
     local distance = typemax(Float64)
     foreach(r -> begin
 
-        # Depot -> new delivery
-        local dist = getDistance(cvrp_auxiliar, r.deliveries[1], delivery)
-        if (dist < distance)
-            distance = dist
-            position = 2
-            route = r
-        end
+        if (r.free - delivery.size >= 0)
+        
+            # Depot -> new delivery
+            local dist = getDistance(cvrp_auxiliar, r.deliveries[1], delivery)
+            if (dist < distance)
+                distance = dist
+                position = 2
+                route = r
+            end
 
-        # Last delivery in route -> new delivery
-        dist = getDistance(cvrp_auxiliar, r.deliveries[end], delivery)
-        if (dist < distance)
-            distance = dist
-            position = length(r.deliveries) + 1
-            route = r
+            # Last delivery in route -> new delivery
+            dist = getDistance(cvrp_auxiliar, r.deliveries[end], delivery)
+            if (dist < distance)
+                distance = dist
+                position = length(r.deliveries) + 1
+                route = r
+            end
+        
         end
 
     end, routes)
