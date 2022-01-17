@@ -24,6 +24,8 @@ mutable struct Delivery
     visiting_index::Int64
     route_index::Int64
 
+    fixed::Bool # If a delivery cannot be swapped between routes
+
     Delivery(attributes...) = begin
         local id    = ""
         local point = Point(0,0)
@@ -31,6 +33,7 @@ mutable struct Delivery
         local index = 0
         local visiting_index = 0
         local route_index    = 0
+        local fixed = false
 
         isdefined(attributes, 1) ? id    = attributes[1] : nothing
         isdefined(attributes, 2) ? point = attributes[2] : nothing
@@ -38,8 +41,9 @@ mutable struct Delivery
         isdefined(attributes, 4) ? index = attributes[4] : nothing
         isdefined(attributes, 5) ? visiting_index = attributes[5] : nothing
         isdefined(attributes, 6) ? route_index    = attributes[6] : nothing
+        isdefined(attributes, 7) ? fixed    = attributes[7] : nothing
 
-        return new(id, point, size, index, visiting_index, route_index)
+        return new(id, point, size, index, visiting_index, route_index, fixed)
     end
 end
 

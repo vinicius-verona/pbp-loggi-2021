@@ -5,7 +5,7 @@ using CVRP_Structures
 using Load_Instance
 using Cluster_Instance: train
 using Initial_Solution: greedySolution
-using ClarkeWright: clarkewrightSolution
+using ClarkeWright: clarkeWrightSolution
 using Plots 
 
 
@@ -73,21 +73,21 @@ function cvrp(arguments::Argument)
     println("=> Compl. timestamp: ", execution_stats.train_completion_timestamp)
     
     # Greedy Solution
-    println("\n======> Start greedy solution")
-    execution_stats.greedy_initial_timestamp = now()
-    println("=> Start timestamp : ", execution_stats.greedy_initial_timestamp)
+    # println("\n======> Start greedy solution")
+    # execution_stats.greedy_initial_timestamp = now()
+    # println("=> Start timestamp : ", execution_stats.greedy_initial_timestamp)
     
-    local greedy_solution = greedySolution(instance, auxiliars, model)
-    execution_stats.greedy_completion_timestamp = now()
-    println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, greedy_solution)), " routes")
-    println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
+    # local greedy_solution = greedySolution(instance, auxiliars, model)
+    # execution_stats.greedy_completion_timestamp = now()
+    # println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, greedy_solution)), " routes")
+    # println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
     
     # Clarke-Wright Solution
-    println("\n======> Start Clrke-Wright solution")
+    println("\n======> Start Clarke-Wright solution")
     execution_stats.cw_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
     
-    local cw_solution = clarkewrightSolution(instance, auxiliars)
+    local cw_solution = clarkeWrightSolution(instance, auxiliars, length(instance.deliveries))
     execution_stats.cw_completion_timestamp = now()
     println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, cw_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.cw_completion_timestamp)
@@ -102,18 +102,16 @@ function cvrp(arguments::Argument)
     # local heuristic_solution = ils(instance, auxiliars, clarkeWright_solution)
     # execution_stats.heuristic_completion_timestamp = now()
 
-
     # Generate Output
     # generateOutput(greedy_solution)
     # generateOutput(heuristic_solution)
 
     println("\n======> Results (Distance in KM)")
-    println("Greedy       :", sum(map(x -> x.distance, greedy_solution)) / 1000)
+    # println("Greedy       :", sum(map(x -> x.distance, greedy_solution)) / 1000)
     println("Clarke-Wright:", sum(map(x -> x.distance, cw_solution)) / 1000)
 
     # Plot routes
-    plotRoute(greedy_solution)
-    
+    # plotRoute(greedy_solution)
 
     println()
     

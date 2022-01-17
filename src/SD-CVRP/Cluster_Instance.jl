@@ -14,8 +14,10 @@ export train
 For a given region, read instances starting at day `initial_day` and stopping at `limit_day`.
 With each instance, store enough information to create a cluster and facilitate finding vehicles
 to service a client.
+In case there is an instance between `initial_day` and `limit_day` that should not be considered,
+use the `except::Int64` parameter.
 """
-function train(region::String="df-0", initial_day::Int64=0, limit_day::Int64=89)
+function train(region::String="df-0"; initial_day::Int64=0, limit_day::Int64=89, except::Int64=0)
     
     # Load directory
     local train_dir   = "$(@__DIR__)/../../data/input/train/$region"
@@ -28,8 +30,9 @@ function train(region::String="df-0", initial_day::Int64=0, limit_day::Int64=89)
         
         local lt = parse(Int64, day) < initial_day
         local gt = parse(Int64, day) > limit_day
+        local eq = parse(Int64, day) == except
 
-        return (lt || gt)
+        return (lt || gt || eq)
     end
 
     # Remove instance before initial day and after limit day
@@ -55,7 +58,7 @@ function train(region::String="df-0", initial_day::Int64=0, limit_day::Int64=89)
         points = cat(points, instance_data[1], dims=1)
         number_of_routes += instance_data[2]
     end
-    
+
     number_of_routes = Int(round(number_of_routes / length(train_files), RoundUp))
 
     # Create model by clustering delivery points of training instances
