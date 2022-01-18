@@ -30,31 +30,9 @@ adapted to the dynamic version of CVRP (DCVRP).
 """
 function clarkeWrightSolution(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, slot::Int64=10)
 
-    # local idx = 0
     local routes::Array{Route, 1} = []
-
-    # foreach(d->begin
-    #     idx += 1
-    #     local pairs = getPairs(instance, cvrp_auxiliars, slot) # Get combination pairs of deliveries on slot
-    #     sort!(pairs, alg = MergeSort, by = x -> x.savings, rev = true)
-
-    #     for p in pairs
-
-    #         local in_route = p.from.route_index !== 0 || p.to.route_index !== 0
-
-    #         if (in_route)
-    #             insertPair!(:Merge, instance, cvrp_auxiliars, p, routes)
-    #         else
-    #             insertPair!(:New, instance, cvrp_auxiliars, p, routes)
-    #         end
-
-    #     end
-    # end, instance.deliveries[begin:slot])
-
     local pairs = getPairs(instance, cvrp_auxiliars, slot) # Get combination pairs of deliveries on slot
     sort!(pairs, alg = MergeSort, by = x -> x.savings, rev = true)
-
-    println("Length of pairs: $(length(pairs))")
 
     for p in pairs
 
@@ -91,14 +69,11 @@ function insertPair!(::Val{:Merge}, instance::CvrpData, cvrp_auxiliar::CvrpAuxil
             concatRoutes!(cvrp_auxiliar, routes[first_assignment], routes[second_assignment], pair, routes)
         end
 
-    elseif (first_assignment !== 0 && routes[first_assignment].free - pair.to.size >= 0)
+    elseif (second_assignment === 0 && first_assignment !== 0 && routes[first_assignment].free - pair.to.size >= 0)
         concatRoutes!(cvrp_auxiliar, routes[first_assignment], pair.to, pair)
 
-    elseif (second_assignment !== 0 && routes[second_assignment].free - pair.from.size >= 0)
-        concatRoutes!(cvrp_auxiliar, routes[second_assignment], pair.from, pair)
-    
-    else
-        throw("Error while merging pairs -> insertPair!() in ClarkeWright.jl")
+    elseif (first_assignment === 0 && second_assignment !== 0 && routes[second_assignment].free - pair.from.size >= 0)
+        concatRoutes!(cvrp_auxiliar, routes[second_assignment], pair.from, pair)    
     end
 
 end
@@ -116,8 +91,6 @@ function insertPair!(::Val{:New}, instance::CvrpData, cvrp_auxiliar::CvrpAuxilia
     pushDelivery!(cvrp_auxiliar, route, pair.from)
     pushDelivery!(cvrp_auxiliar, route, pair.to)
     push!(routes, route)
-    # println(route)
-    # exit(0)
 
 end
 
@@ -138,15 +111,21 @@ function concatRoutes!(cvrp_aux::CvrpAuxiliars, first_route::Route, second_route
     local start_position2 = (second_route.deliveries[begin].id == "DEPOT") ? 2 : 1
     local end_position2   = (second_route.deliveries[end].id == "DEPOT") ? length(second_route.deliveries) - 1 : length(second_route.deliveries)
     
-    if (!(pair.from.visiting_index !== start_position1) && !(pair.from.visiting_index !== end_position1))
-        return 
+    local adjacent1 = false
+    local adjacent2 = false
+    if (pair.from.visiting_index === start_position1 || pair.from.visiting_index === end_position1)
+        adjacent1 = true
     end
-    if (!(pair.to.visiting_index !== start_position2) && !(pair.to.visiting_index !== end_position2))
-        return 
+    if (pair.to.visiting_index === start_position2 || pair.to.visiting_index === end_position2)
+        adjacent2 = true
     end
 
-    local r1r2 = getInsertionDistance(cvrp_aux, first_route, end_position1, second_route[start_position2:end_position2])
-    local r2r1 = getInsertionDistance(cvrp_aux, second_route, end_position2, first_route[start_position1:end_position1])
+    if (!adjacent1 || !adjacent2)
+        return
+    end
+
+    local r1r2 = getInsertionDistance(cvrp_aux, first_route, end_position1, second_route.deliveries[start_position2:end_position2])
+    local r2r1 = getInsertionDistance(cvrp_aux, second_route, end_position2, first_route.deliveries[start_position1:end_position1])
     
     if (r1r2 <= r2r1)
         # Insert r2 string to r1
@@ -175,21 +154,18 @@ function concatRoutes!(cvrp_aux::CvrpAuxiliars, route::Route, delivery::Delivery
     local start_position = (route.deliveries[begin].id == "DEPOT") ? 2 : 1
     local end_position   = (route.deliveries[end].id == "DEPOT") ? length(route.deliveries) - 1 : length(route.deliveries)
     local delivery_in_route = (delivery === pair.from) ? pair.to : pair.from
-    
-    if (!(delivery_in_route === route.deliveries[start_position]) && !(delivery_in_route === route.deliveries[end_position]) )
-        return 
+    local adjacent = false
+
+    if (delivery_in_route.visiting_index === start_position || delivery_in_route.visiting_index === end_position)
+        adjacent = true
     end
 
-    #= 
-      Check whether to insert delivery in the before or after the delivery alread in route
-      d <- predecessor delivery to j (j - 1) in case it exists (consider depot as delivery)
-      i <- delivery to be inserted
-      j <- delivery already in route
-      Insert 'i' before 'j' if route distance(d,i,j,k) < distance(d,j,i,k)
-      and 'i' after 'j' otherwise. 
-    =#
+    if (!adjacent)
+        return
+    end
+
     local dij = getInsertionDistance(cvrp_aux, route, delivery_in_route.visiting_index, [delivery])
-    local dji = getInsertionDistance(cvrp_aux, route, delivery_in_route.visiting_index + 1, [delivery])
+    local dji = getInsertionDistance(cvrp_aux, route, delivery_in_route.visiting_index, [delivery])
 
     if (dij <= dji)
         pushDelivery!(cvrp_aux, route, delivery, delivery_in_route.visiting_index)
@@ -217,7 +193,7 @@ function getPairs(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, slot::Int64
                 local dj = getDistance(cvrp_auxiliars, depot, instance.deliveries[j])
                 local ij = getDistance(cvrp_auxiliars, instance.deliveries[i], instance.deliveries[j])
                 
-                if (di + dj > ij)
+                if (di + dj > ij && instance.capacity > instance.deliveries[i].size + instance.deliveries[j].size)
                     savings[savings_counter] = Savings(instance.deliveries[i], instance.deliveries[j], di + dj - ij)
                     savings_counter += 1
                 end

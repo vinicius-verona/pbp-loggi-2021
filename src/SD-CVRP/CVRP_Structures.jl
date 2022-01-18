@@ -114,10 +114,10 @@ mutable struct Route
         local index = 0
         local deliveries = Array{Delivery,1}()
         local distance   = 0.0
+        local capacity   = 0
+        local free       = 0
+        local centroid   = Point(0.0, 0.0)
         local depot::Delivery
-        local capacity = 0
-        local free = 0
-        local centroid = Point(0.0, 0.0)
 
         isdefined(attributes, 1) ? index      = attributes[1] : nothing
         isdefined(attributes, 2) ? deliveries = attributes[2] : nothing
@@ -134,6 +134,7 @@ mutable struct Route
             end
 
             insert!(deliveries, 1, depot)
+            insert!(deliveries, length(deliveries) + 1, depot)
         end : throw("A Depot must be passed as either a Delivery or a Point")
         
         isdefined(attributes, 5) ? capacity = attributes[5] : nothing

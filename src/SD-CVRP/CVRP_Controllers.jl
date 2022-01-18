@@ -28,18 +28,18 @@ Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it 
 """
 @inline function pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64 = -1)
 
-    if (d.fixed && route.deliveries[1].route_index != d.route_index)
+    if (d.fixed && route.index != d.route_index)
         throw("Cannot push a fixed delivery into another route. Delivery ID: $(d.id)")
     end
 
     if (pos == -1)
-        pos = length(route.deliveries) + 1
+        pos = length(route.deliveries)
     end
 
     insert!(route.deliveries, pos, d)
     route.free -= d.size
     d.route_index    = route.index
-    d.visiting_index = length(route.deliveries)
+    d.visiting_index = pos
 
     local previous = isassigned(route.deliveries, pos - 1) ? route.deliveries[pos-1] : nothing; # Previous Delivery
     local next = isassigned(route.deliveries, pos + 1) ? route.deliveries[pos+1] : nothing; # Next Delivery
@@ -49,6 +49,12 @@ Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it 
     
     if (previous !== nothing && next !== nothing) 
         route.distance -= getDistance(cvrp_aux, previous, next)
+    end
+
+    local counter = pos+1
+    for i = pos+1:length(route.deliveries)
+        route.deliveries[i].visiting_index = counter
+        counter += 1
     end
 
 end
@@ -61,14 +67,13 @@ Insert string of delivery into `route` after last position of `route`.
 """
 @inline function pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, string::Array{Delivery, 1})
 
-    local end_position1   = (route.deliveries[end].id == "DEPOT") ? length(route.deliveries) - 1 : length(route.deliveries)
-    local start_position2 = (string[begin].id == "DEPOT") ? 2 : 1
-    local end_position2   = (string[end].id == "DEPOT") ? length(string) - 1 : length(string)
-    
+    local start_position = (string[begin].id == "DEPOT") ? 2 : 1
+    local end_position   = (string[end].id == "DEPOT") ? length(string) - 1 : length(string)
+
     foreach(delivery -> begin
-        pushDelivery!(cvrp_aux, route, delivery, end_position1 + 1)
-        end_position1 += 1
-    end, string[start_position2:end_position2])
+        # pushDelivery!(cvrp_aux, route, delivery, length(route.deliveries))
+        pushDelivery!(cvrp_aux, route, delivery)
+    end, string[start_position:end_position])
 
 end
 
@@ -127,9 +132,6 @@ If returned value is positive, the insertion is not profitable.
 """
 @inline function getInsertionDistance(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, string::Array{Delivery, 1})
 
-    # TODO: Criar DEPOT no fim das rotas (automaticamente) e nas funções de inserção, mudar 
-    #       para inserir a partir da segunda e até penultima posição
-
     if (length(string) === 0)
         throw("Empty string.")
     end
@@ -139,12 +141,8 @@ If returned value is positive, the insertion is not profitable.
 
     let value = 0
 
-        local predecessor = route.deliveries[idx]
-        local neighbor = nothing
-        
-        if (idx + 1 <= length(route.deliveries))
-            neighbor = route.deliveries[idx + 1]
-        end
+        local predecessor = route.deliveries[idx-1]
+        local neighbor    = route.deliveries[idx]
 
         value += getDistance(cvrp_aux, predecessor, string[begin])
         
