@@ -1,5 +1,11 @@
 RouteOrNothing = Union{Route, Nothing}
 
+"""
+    - This neighbor considers that, for a route of type {depot -> d1 -> d2 ... -> dk -> depot}
+    - if dn, where n <= k, is the first one not fixed to the route, then dn+1...dk are also not fixed.
+    - However, d1...dn-1 are all fixed to the route.
+"""
+
 export Swap
 mutable struct Swap <: Neighbor
     
@@ -81,7 +87,39 @@ mutable struct Swap <: Neighbor
 end
 
 export execute
-function execute(problem::CvrpData, cvrp_aux::CvrpAuxiliars, ) # Delta evaluation
+function execute(problem::CvrpData, cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}) # Delta evaluation
+
+    # Selecting routes
+    swap.first_route = rand(routes)
+    swap.second_route = rand(routes)
+    
+    if (swap.first_route.index == swap.second_route.index)
+        while (swap.first_route.index == swap.second_route.index &&
+              (length(swap.first_route.deliveries) - 2 < swap.swap_size
+              || length(swap.second_route.deliveries) - 2 < swap.swap_size))
+
+            swap.first_route = rand(routes)
+            swap.second_route = rand(routes)
+        
+        end
+    end
+
+    
+    # As both routes are different routes and both have swap_size deliveries, chose random string to swap
+    local r1_size = length(swap.first_route.deliveries)
+    local r2_size = length(swap.second_route.deliveries)
+    local unfixedR1   = findfirst(x -> x.fixed == false, swap.first_route.deliveries) 
+    local unfixedR2   = findfirst(x -> x.fixed == false, swap.second_route.deliveries) 
+
+    if (unfixedR1 + swap.swap_size > r1_size - 1 || unfixedR2 + swap.swap_size > r2_size - 1)
+        swap.hasMove = false
+        return typemax(Int64)
+    end
+
+    swap.r1_starts_at = rand(unfixedR1:r1_size - swap.swap_size)
+    swap.r2_starts_at = rand(unfixedR2:r2_size - swap.swap_size)
+    swap.r1_ends_at   = swap.r1_starts_at + swap.swap_size - 1
+    swap.r2_ends_at   = swap.r2_starts_at + swap.swap_size - 1
 
     # 1 - Select a route
     # 2 - Select another route
