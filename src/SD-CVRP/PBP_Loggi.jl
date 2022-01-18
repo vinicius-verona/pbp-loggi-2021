@@ -6,6 +6,7 @@ using Load_Instance
 using Cluster_Instance: train
 using Initial_Solution: greedySolution
 using ClarkeWright: clarkeWrightSolution
+using Heuristic_Solution: ils 
 using Plots 
 
 
@@ -45,6 +46,9 @@ mutable struct ExecStatistic
     cw_initial_timestamp::DateTime # Clarke-Wright Solution timestamp
     cw_completion_timestamp::DateTime # Clarke-Wright Solution timestamp
 
+    heuristic_initial_timestamp::DateTime # Heuristic Solution timestamp
+    heuristic_completion_timestamp::DateTime # Heuristic Solution timestamp
+
 end
 
 # CVRP Program
@@ -60,7 +64,7 @@ function cvrp(arguments::Argument)
     println("=> Instance # of deliveries   : ", length(instance.deliveries))
     println("=> Instance min # of vehicles : ", instance.min_number_routes, " routes")
     
-    local execution_stats = ExecStatistic(now(), now(), now(), now(), now(), now())
+    local execution_stats = ExecStatistic(now(), now(), now(), now(), now(), now(), now(), now())
 
     # Clustering instance
     println("\n======> Start clustering instance")
@@ -73,46 +77,44 @@ function cvrp(arguments::Argument)
     println("=> Compl. timestamp: ", execution_stats.train_completion_timestamp)
     
     # Greedy Solution
-    # println("\n======> Start greedy solution")
-    # execution_stats.greedy_initial_timestamp = now()
-    # println("=> Start timestamp : ", execution_stats.greedy_initial_timestamp)
+    println("\n======> Start greedy solution")
+    execution_stats.greedy_initial_timestamp = now()
+    println("=> Start timestamp : ", execution_stats.greedy_initial_timestamp)
     
-    # local greedy_solution = greedySolution(instance, auxiliars, model)
-    # execution_stats.greedy_completion_timestamp = now()
-    # println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, greedy_solution)), " routes")
-    # println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
-    
+    local greedy_solution = greedySolution(deepcopy(instance), auxiliars, model)
+    execution_stats.greedy_completion_timestamp = now()
+    println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, greedy_solution)), " routes")
+    println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
+
+    # TODO: Criar uma função para chamar clarkewright e ils recursivamente enquanto houverem entregas não alocadas (fixed = false)
+    # Ideia: criar um contador geral para a função, que tem o valor total de entregas e vai diminuindo com slots
+
     # Clarke-Wright Solution
     println("\n======> Start Clarke-Wright solution")
     execution_stats.cw_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
     
-    local cw_solution = clarkeWrightSolution(instance, auxiliars, length(instance.deliveries))
+    local cw_solution = clarkeWrightSolution(instance, auxiliars, Int(round(length(instance.deliveries)*0.2, RoundDown)))
     execution_stats.cw_completion_timestamp = now()
-    println("=> # of vehicles   : ", length(filter(r->length(r.deliveries) > 1, cw_solution)), " routes")
+    println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, cw_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.cw_completion_timestamp)
     
 
     # Heuristic Solution
-    # println("\n======> Start Heuristic solution")
-    # execution_stats.heuristic_initial_timestamp = now()
-    # println("=> Start timestamp : ", execution_stats.heuristic_initial_timestamp)
+    println("\n======> Start Heuristic solution")
+    execution_stats.heuristic_initial_timestamp = now()
+    println("=> Start timestamp : ", execution_stats.heuristic_initial_timestamp)
 
-    # local heuristic_solution = ils(instance, auxiliars, greedy_solution)
-    # local heuristic_solution = ils(instance, auxiliars, clarkeWright_solution)
-    # execution_stats.heuristic_completion_timestamp = now()
+    local heuristic_solution = ils(instance, auxiliars, cw_solution, Int(round(length(instance.deliveries)*0.2, RoundDown)))
+    execution_stats.heuristic_completion_timestamp = now()
 
     # Generate Output
     # generateOutput(greedy_solution)
     # generateOutput(heuristic_solution)
 
     println("\n======> Results (Distance in KM)")
-    # println("Greedy       :", sum(map(x -> x.distance, greedy_solution)) / 1000)
-    println("Clarke-Wright:", sum(map(x -> x.distance, cw_solution)) / 1000)
-
-    # Plot routes
-    # plotRoute(greedy_solution)
-
+    println("Greedy   : ", sum(map(x -> x.distance, greedy_solution)) / 1000)
+    println("Heuristic: ", sum(map(x -> x.distance, heuristic_solution)) / 1000)
     println()
     
 end
