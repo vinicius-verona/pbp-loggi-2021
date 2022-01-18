@@ -19,10 +19,12 @@ mutable struct IlsController
 end
 
 mutable struct RnaController
+    
     initial_perturb::Int64
     perturb_max::Int64
     iter_max::Int64
     rna_max::Int64
+
 end
 
 export ils
