@@ -71,9 +71,45 @@ Insert string of delivery into `route` after last position of `route`.
     local end_position   = (string[end].id == "DEPOT") ? length(string) - 1 : length(string)
 
     foreach(delivery -> begin
-        # pushDelivery!(cvrp_aux, route, delivery, length(route.deliveries))
         pushDelivery!(cvrp_aux, route, delivery)
     end, string[start_position:end_position])
+
+end
+
+export deleteDelivery!
+"""
+    deleteDelivery!(cvrp_aux::CvrpAuxliars, route::Route, idx::Int64, limit::Int64)
+
+Remove the selected string of deliveries from `route`. The string starts at `idx` and ends at `limit`
+"""
+@inline function deleteDelivery!(cvrp_aux::CvrpAuxliars, route::Route, idx::Int64, limit::Int64)
+
+    if (idx < 1)
+        throw("Passed argument is out of bound. IDX: $idx is not a valid value.")
+    end
+    if (limit > length(route.deliveries))
+        throw("Passed argument is out of bound. Limit: $limit is not a valid value.")
+    end
+
+    if (length(findall(x -> x.fixed === true, route.deliveries[idx:limit])))
+        @warn "Removing fixed deliveries from route."
+    end
+
+    route.free += getStringSize(route.deliveries[idx:limit])
+
+    if (isassigned(route.deliveries, idx - 1) && isassigned(route.deliveries, limit + 1))
+        route.distance += getDistance(cvrp_aux, route.deliveries[idx - 1], route.deliveries[limit + 1])
+    end
+    
+    route.distance -= getStringDistance(cvrp_aux, route.deliveries[idx:limit])
+    deleteat!(route.deliveries, idx:limit)
+
+    # Update indexers
+    local counter = 1
+    for i in route.deliveries
+        i.visiting_index = counter
+        counter += 1
+    end
 
 end
 
@@ -114,6 +150,27 @@ function getStringDistance(cvrp_aux::CvrpAuxiliars, string::Array{Delivery, 1})
         
         for idx = 1 : length(string) - 1
             value += getDistance(cvrp_aux, string[idx], string[idx + 1])
+        end
+
+        return value
+        
+    end
+    
+end
+
+
+export getStringSize
+"""
+    getStringSize(string::Array{Delivery, 1})
+
+For a given sub-route (`string`), returns the string total size.
+"""
+function getStringSize(string::Array{Delivery, 1})
+
+    let value = 0, idx = 0
+        
+        for idx = 1 : length(string) - 1
+            value += string[idx].size
         end
 
         return value

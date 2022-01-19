@@ -134,7 +134,7 @@ mutable struct Route
             end
 
             insert!(deliveries, 1, depot)
-            insert!(deliveries, length(deliveries) + 1, depot)
+            insert!(deliveries, length(deliveries) + 1, deepcopy(depot))
         end : throw("A Depot must be passed as either a Delivery or a Point")
         
         isdefined(attributes, 5) ? capacity = attributes[5] : nothing

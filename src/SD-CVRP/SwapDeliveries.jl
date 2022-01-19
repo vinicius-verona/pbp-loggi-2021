@@ -94,6 +94,9 @@ end
 export execute
 function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}) # Delta evaluation
 
+    # Update some statistics regarding the move execution
+    move.hasMove = false
+
     # Selecting routes
     swap.first_route = rand(routes)
     swap.second_route = rand(routes)
@@ -151,13 +154,18 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}) #
 end
 
 export accept
-function accept()
+function accept(cvrp_aux::CvrpAuxiliars, swap::Swap)
+        
+    # Swap deliveries between the selected routes
+    deleteDelivery!(cvrp_aux, swap.first_route, swap.r1_starts_at, swap.r1_ends_at)
+    deleteDelivery!(cvrp_aux, swap.second_route, swap.r2_starts_at, swap.r2_ends_at)
+    pushDelivery!(cvrp_aux, swap.first_route, swap.second_route)
+    pushDelivery!(cvrp_aux, swap.second_route, swap.first_route)
 
-    
+    # Update move execution statistics
+    move.accept += 1
 
 end
 
 export reject
-function reject()
-    # Update statistics
-end
+reject(swap::Swap) = swap.reject += 1
