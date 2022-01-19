@@ -179,7 +179,7 @@ If returned value is positive, the insertion is not profitable.
         throw("Empty route. Route must have at least two depot as deliveries")
     end
     if (length(route.deliveries) < gap)
-        throw("The gap is too big. Route must have at least gap deliveries + two depot deliveries.")
+        throw("The gap is too big. Route must have at least $gap deliveries + two depot deliveries.")
     end
 
     let value = 0
