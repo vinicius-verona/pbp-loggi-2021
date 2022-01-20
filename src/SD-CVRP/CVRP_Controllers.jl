@@ -19,7 +19,6 @@ Using [haversine](https://en.wikipedia.org/wiki/Haversine_formula) formula, calc
 """
 getDistance(p1::Point, p2::Point)::Float64 = haversine((p1.lng, p1.lat), (p2.lng, p2.lat))
 
-# TODO: Alterar campo route para final da assinatura da função
 export pushDelivery!
 """
     pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64 = -1)
@@ -338,6 +337,57 @@ the first serviced customer or the last.
     end, routes)
 
     return route, position
+
+end
+
+"""
+    getClosestRoute(cvrp_auxiliar::CvrpAuxiliars, deliveries::Array{delivery, 1}, routes::Array{Route, 1}, delivery::Delivery)
+
+For a given delivery, find the closest route which has enough space to have `delivery` inserted into.
+
+**Returns:**
+* The position of the closest route.
+"""
+@inline function getClosestRoute(cvrp_auxiliar::CvrpAuxiliars, deliveries::Array{delivery, 1}, routes::Array{Route, 1}, delivery::Delivery)
+
+    foreach(d -> begin
+        for tuple in d
+        
+            local dlvr = deliveries[tuple.second]
+            if (routes[dlvr.route_index].free - delivery.size >= 0)
+                return dlvr.route_index
+            end
+
+        end
+    end, cvrp_auxiliar.k_adjacent)
+
+    return typemax(Int64)
+
+end
+
+"""
+    getBestInsertionPosition(cvrp_auxiliar::CvrpAuxiliars, route::Route, delivery::Delivery)
+
+For a given delivery and route, find the best position to insert the delivery into the route.
+
+**Returns:**
+* The position in which `delivery` shall be inserted.
+"""
+@inline function getBestInsertionPosition(cvrp_auxiliar::CvrpAuxiliars, route::Route, delivery::Delivery)
+
+    local position = typemax(Int64)
+    local distance = typemax(Float64)
+    
+    for i = 1 : length(route.deliveries) - 1
+        local local_distance = getDistance(cvrp_auxiliar, route.deliveries[i], delivery)
+
+        if (local_distance < distance)
+            distance = local_distance
+            position = i
+        end
+    end
+
+    return position
 
 end
 

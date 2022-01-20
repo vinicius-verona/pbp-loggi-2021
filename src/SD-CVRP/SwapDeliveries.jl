@@ -1,5 +1,3 @@
-RouteOrNothing = Union{Route, Nothing}
-
 """
     - This neighbor considers that, for a route of type {depot -> d1 -> d2 ... -> dk -> depot}
     - if dn, where n <= k, is the first one not fixed to the route, then dn+1...dk are also not fixed.
@@ -42,9 +40,9 @@ mutable struct Swap <: Neighbor
     total::Int64
 
     Swap(attributes...) = begin
-        local swap_size = 1
         local id = "Swap-default"
-        local hasMove = false
+        local hasMove   = false
+        local swap_size = 1
         local first_route  = nothing
         local second_route = nothing
         local r1_starts_at = -1
@@ -68,20 +66,20 @@ mutable struct Swap <: Neighbor
             swap_size = attributes[3]
             id === "Swap-default" ? id = "Swap-$swap_size" : nothing
         end : nothing
-        isdefined(attributes,  4) ? first_route  = attributes[4] : nothing
-        isdefined(attributes,  5) ? second_route = attributes[5] : nothing
-        isdefined(attributes,  6) ? r1_starts_at = attributes[6] : nothing
-        isdefined(attributes,  7) ? r2_starts_at = attributes[7] : nothing
-        isdefined(attributes,  8) ? r1_ends_at   = attributes[8] : nothing
-        isdefined(attributes,  9) ? r2_ends_at   = attributes[9] : nothing
-        isdefined(attributes, 10) ? original_size1 = attributes[10] : nothing
-        isdefined(attributes, 11) ? original_size2 = attributes[11] : nothing
-        isdefined(attributes, 12) ? move_size1 = attributes[12] : nothing
-        isdefined(attributes, 13) ? move_size2 = attributes[13] : nothing
-        isdefined(attributes, 14) ? original_distance1 = attributes[14] : nothing
-        isdefined(attributes, 15) ? original_distance2 = attributes[15] : nothing
-        isdefined(attributes, 16) ? move_distance1 = attributes[16] : nothing
-        isdefined(attributes, 17) ? move_distance2 = attributes[17] : nothing
+        # isdefined(attributes,  4) ? first_route  = attributes[4] : nothing
+        # isdefined(attributes,  5) ? second_route = attributes[5] : nothing
+        # isdefined(attributes,  6) ? r1_starts_at = attributes[6] : nothing
+        # isdefined(attributes,  7) ? r2_starts_at = attributes[7] : nothing
+        # isdefined(attributes,  8) ? r1_ends_at   = attributes[8] : nothing
+        # isdefined(attributes,  9) ? r2_ends_at   = attributes[9] : nothing
+        # isdefined(attributes, 10) ? original_size1 = attributes[10] : nothing
+        # isdefined(attributes, 11) ? original_size2 = attributes[11] : nothing
+        # isdefined(attributes, 12) ? move_size1 = attributes[12] : nothing
+        # isdefined(attributes, 13) ? move_size2 = attributes[13] : nothing
+        # isdefined(attributes, 14) ? original_distance1 = attributes[14] : nothing
+        # isdefined(attributes, 15) ? original_distance2 = attributes[15] : nothing
+        # isdefined(attributes, 16) ? move_distance1 = attributes[16] : nothing
+        # isdefined(attributes, 17) ? move_distance2 = attributes[17] : nothing
 
         return new(id, hasMove, swap_size, first_route, second_route, r1_starts_at,
                    r2_starts_at, r1_ends_at, r2_ends_at, first_string, second_string, 
@@ -137,7 +135,15 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}) #
     # Store selected string
     swap.first_string  = swap.first_route[swap.r1_starts_at:swap.r1_ends_at]
     swap.second_string = swap.second_route[swap.r2_starts_at:swap.r2_ends_at]
-    
+
+    if (swap.first_route.free + getStringSize(swap.first_string) - getStringSize(swap.second_string) < 0
+        || swap.second_route.free + getStringSize(swap.second_string) - getStringSize(swap.first_string) < 0)
+        
+        swap.hasMove = false
+        return typemax(Int64)
+
+    end
+
     # Calculate move value
     swap.move_distance1 = swap.original_distance1 - getStringDistance(cvrp_aux, swap.first_string)
     swap.move_distance1 += getInsertionDistance(cvrp_aux, swap.first_route, swap.r1_starts_at, swap.swap_size, swap.second_string)
