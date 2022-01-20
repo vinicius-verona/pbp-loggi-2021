@@ -91,7 +91,7 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1})
     end
 
     # Chose random string to shift
-    local route_size   = length(shift.route.deliveries)
+    local route_size    = length(shift.route.deliveries)
     local unfixed_route = findfirst(x -> x.fixed == false, shift.route.deliveries) 
 
     if (unfixed_route + shift.shift_size > route_size - 1)
@@ -126,11 +126,15 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1})
         
         shift.predecessors[i] = shift.routes[i].deliveries[insertion_position - 1]
         shift.insertion_positions[i] = insertion_position
-        
+
+        deleteDelivery!(cvrp_aux, shift.route, delivery.visiting_index, delivery.visiting_index)
         pushDelivery!(cvrp_aux, shift.routes[i], delivery, insertion_position)
         move_routes_distance += shift.routes[i].distance
 
     end
+
+    # Update removal route distance
+    shift.move_distance = shift.route.distance
 
     # Update some statistics regarding the move execution
     move.hasMove = true
@@ -142,9 +146,17 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1})
 end
 
 export accept
-function accept(cvrp_aux::CvrpAuxiliars, shift::Shift)
-
-end
+accept(_::CvrpAuxiliars, shift::Shift) = shift.accept += 1
 
 export reject
-reject(shift::Shift) = shift.reject += 1
+function reject(cvrp_aux::CvrpAuxiliars, shift::Shift)
+
+    for i = 1:shift.shift_size
+        deleteDelivery!(cvrp_aux, shift.routes[i], shift.string[i].visiting_index, shift.string[i].visiting_index)
+        pushDelivery!(cvrp_aux, shift.route, shift.string[i], shift.removal_starts_at + i - 1)
+    end
+
+    # Update move execution statistics
+    move.reject += 1
+
+end

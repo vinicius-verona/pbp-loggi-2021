@@ -165,8 +165,8 @@ function accept(cvrp_aux::CvrpAuxiliars, swap::Swap)
     # Swap deliveries between the selected routes
     deleteDelivery!(cvrp_aux, swap.first_route, swap.r1_starts_at, swap.r1_ends_at)
     deleteDelivery!(cvrp_aux, swap.second_route, swap.r2_starts_at, swap.r2_ends_at)
-    pushDelivery!(cvrp_aux, swap.first_route, swap.second_route)
-    pushDelivery!(cvrp_aux, swap.second_route, swap.first_route)
+    pushDelivery!(cvrp_aux, swap.first_route, swap.second_route, swap.r1_starts_at)
+    pushDelivery!(cvrp_aux, swap.second_route, swap.first_route, swap.r2_starts_at)
 
     # Update move execution statistics
     move.accept += 1
@@ -174,4 +174,4 @@ function accept(cvrp_aux::CvrpAuxiliars, swap::Swap)
 end
 
 export reject
-reject(swap::Swap) = swap.reject += 1
+reject(_::CvrpAuxiliars, swap::Swap) = swap.reject += 1

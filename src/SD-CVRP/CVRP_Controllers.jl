@@ -64,14 +64,23 @@ export pushDelivery!
 
 Insert string of delivery into `route` after last position of `route`.
 """
-@inline function pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, string::Array{Delivery, 1})
+@inline function pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, string::Array{Delivery, 1}, start::Int64 = -1)
 
     local start_position = (string[begin].id == "DEPOT") ? 2 : 1
     local end_position   = (string[end].id == "DEPOT") ? length(string) - 1 : length(string)
 
-    foreach(delivery -> begin
-        pushDelivery!(cvrp_aux, route, delivery)
-    end, string[start_position:end_position])
+    if (start !== -1)
+        foreach(delivery -> begin
+            pushDelivery!(cvrp_aux, route, delivery, start)
+            start += 1
+        end, string[start_position:end_position])
+    
+    else
+        foreach(delivery -> begin
+            pushDelivery!(cvrp_aux, route, delivery)
+        end, string[start_position:end_position])
+    end
+
 
 end
 
