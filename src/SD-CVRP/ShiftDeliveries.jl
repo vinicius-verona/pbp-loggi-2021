@@ -39,18 +39,20 @@ mutable struct Shift <: Neighbor
     sideways::Int64
     total::Int64
 
-    Shift(attributes...) = begin
-        local id = "Shift-default"
+    Shift(size::Int64 = 1; id="Shift-default") = begin
+        # local id = "Shift-default"
         local hasMove    = false
         local shift_size = 1
 
-        isdefined(attributes,  1) ? id = attributes[1] : nothing
-        isdefined(attributes,  2) ? hasMove = attributes[2] : nothing
-        isdefined(attributes,  3) ? begin
-            shift_size = attributes[3]
-            id === "Shift-default" ? id = "Shift-$shift_size" : nothing
-        end : nothing
-  
+        # isdefined(attributes,  1) ? id = attributes[1] : nothing
+        # isdefined(attributes,  2) ? begin
+        #     shift_size = attributes[2]
+        #     id === "Shift-default" ? id = "Shift-$shift_size" : nothing
+        # end : nothing
+        
+        shift_size = size
+        id === "Shift-default" ? id = "Shift-$shift_size" : nothing
+
         local route      = nothing
         local routes     = Array{Delivery, 1}(undef, shift_size)
         local removal_starts_at   = -1

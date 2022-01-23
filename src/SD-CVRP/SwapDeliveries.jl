@@ -39,8 +39,8 @@ mutable struct Swap <: Neighbor
     sideways::Int64
     total::Int64
 
-    Swap(attributes...) = begin
-        local id = "Swap-default"
+    Swap(size::Int64 = 1; id = "Swap-default") = begin
+        # local id = "Swap-default"
         local hasMove   = false
         local swap_size = 1
         local first_route  = nothing
@@ -60,12 +60,14 @@ mutable struct Swap <: Neighbor
         local move_distance1 = 0
         local move_distance2 = 0
 
-        isdefined(attributes,  1) ? id = attributes[1] : nothing
-        isdefined(attributes,  2) ? hasMove = attributes[2] : nothing
-        isdefined(attributes,  3) ? begin
-            swap_size = attributes[3]
-            id === "Swap-default" ? id = "Swap-$swap_size" : nothing
-        end : nothing
+        swap_size = size
+        id === "Swap-default" ? id = "Swap-$swap_size" : nothing
+
+        # isdefined(attributes,  1) ? id = attributes[1] : nothing
+        # isdefined(attributes,  2) ? begin
+        #     swap_size = attributes[2]
+        #     id === "Swap-default" ? id = "Swap-$swap_size" : nothing
+        # end : nothing
         # isdefined(attributes,  4) ? first_route  = attributes[4] : nothing
         # isdefined(attributes,  5) ? second_route = attributes[5] : nothing
         # isdefined(attributes,  6) ? r1_starts_at = attributes[6] : nothing
