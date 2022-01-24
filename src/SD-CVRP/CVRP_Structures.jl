@@ -124,7 +124,7 @@ mutable struct Route
         isdefined(attributes, 3) ? distance   = attributes[3] : nothing
         isdefined(attributes, 4) ? begin
             if (attributes[4] isa Point)
-                depot = Delivery("DEPOT",attributes[4], 0, 0, 1, index)
+                depot = Delivery("DEPOT", attributes[4], 0, 0, 1, index)
                 
             elseif (attributes[4] isa Delivery)
                 depot = attributes[4]

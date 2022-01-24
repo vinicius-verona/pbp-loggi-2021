@@ -61,7 +61,43 @@ function loadDistanceMatrix(instance::String)::CvrpAuxiliars
     local parsed_file = JSON.parse(file)
     distances = reduce(hcat, parsed_file["Distance_Table"])
 
-    return CvrpAuxiliars(distances, size(distances)[1] * size(distances)[2])
+    return CvrpAuxiliars(distances, size(distances)[1] * size(distances)[2], generateNearestAdjacent(100, distances))
+end
+
+"""
+    generateNearestAdjacent(k_adjance::Int64, distances::Array{Float64, 2})
+
+For all vertices in the instance, a heap with the first nearest *k* adjacent vertices is created.
+
+**Parameters:**
+* `k_adjacent` - The number of near adjacent vertices to a given vertex.
+* `distances` - A matrix with the distances between all vertices, where each element is the distance from point A to B.
+"""
+function generateNearestAdjacent(k_adjancent::Int64, distances)
+    
+    local n_vertices = size(distances)[1]
+    local adjacent_heap = Array{Array{Pair{Float64,Int64},1}, 1}(undef, n_vertices - 1)
+    
+    for i = 2:n_vertices
+        local heap = BinaryMaxHeap{Pair{Float64,Int64}}()
+        for j = 2:n_vertices
+            if i != j
+                
+                if length(heap) == k_adjancent && distances[i,j] < first(heap).first
+                    pop!(heap)
+                    push!(heap, Pair(distances[i,j], j - 1)) # Push (Distance, identifier) and to the heap
+                elseif length(heap) + 1 <= k_adjancent
+                    push!(heap, Pair(distances[i,j], j - 1)) # Push (Distance, identifier) and to the heap
+                end
+                
+            end
+        end
+        adjacent_heap[i - 1] = reverse!(extract_all!(heap))
+    end
+        
+
+    return adjacent_heap
+
 end
 
 end # module

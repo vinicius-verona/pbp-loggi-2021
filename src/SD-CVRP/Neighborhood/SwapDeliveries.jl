@@ -92,7 +92,7 @@ mutable struct Swap <: Neighbor
 end
 
 export execute
-function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}) # Delta evaluation
+function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _) # Delta evaluation
 
     # Update some statistics regarding the move execution
     move.hasMove = false

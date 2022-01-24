@@ -349,6 +349,7 @@ the first serviced customer or the last.
 
 end
 
+export getClosestRoute
 """
     getClosestRoute(cvrp_auxiliar::CvrpAuxiliars, deliveries::Array{delivery, 1}, routes::Array{Route, 1}, delivery::Delivery)
 
@@ -361,10 +362,16 @@ For a given delivery, find the closest route which has enough space to have `del
 
     foreach(d -> begin
         for tuple in d
+
+            if (!isassigned(deliveries, tuple.second))
+                continue
+            end
         
             local dlvr = deliveries[tuple.second]
-            if (routes[dlvr.route_index].free - delivery.size >= 0)
-                return dlvr.route_index
+            if (dlvr.route_index !== 0 && routes[dlvr.route_index].free - delivery.size >= 0)
+                if (dlvr.route_index !== delivery.route_index)
+                    return dlvr.route_index
+                end
             end
 
         end
@@ -374,6 +381,7 @@ For a given delivery, find the closest route which has enough space to have `del
 
 end
 
+export getBestInsertionPosition
 """
     getBestInsertionPosition(cvrp_auxiliar::CvrpAuxiliars, route::Route, delivery::Delivery)
 
@@ -397,6 +405,160 @@ For a given delivery and route, find the best position to insert the delivery in
     end
 
     return position
+
+end
+
+
+export copyRoute
+"""
+    copyRoute(source::Array{Route, 1})
+
+For a given set of routes, create a copy and return it.
+"""
+@inline function copyRoute(source::Array{Route, 1})
+
+    local size = length(source)
+    local routes = Array{Route, 1}(undef, size)
+
+    for i = 1:size
+        routes[i] = copyRoute(source[i])
+    end
+
+    return routes
+
+end
+
+export copyRoute
+"""
+    copyRoute(source::Route)
+
+For a given route, create a copy and return it.
+"""
+@inline function copyRoute(source::Route)
+    
+    local length::Int64 = length(source.deliveries)
+    local index::Int64  = source.index
+    local deliveries::Array{Delivery, 1} = Array{Delivery, 1}(undef, length)
+    local distance::Float64 = source.distance
+    local depot::Delivery   = source.depot
+    local capacity::Int64   = source.capacity
+    local free::Int64       = source.free
+    local centroid::Point   = source.centroid
+
+    for i = 1:length
+        deliveries[i] = copyDelivery(source.deliveries[i])
+    end
+
+    return Route(index, deliveries, distance, depot, capacity, free, centroid)
+    
+end
+
+export copyDelivery
+"""
+    copyDelivery(source::Delivery)
+
+For a given delivery, create a copy and return it.
+"""
+@inline function copyDelivery(source::Delivery)
+    
+    local id::String   = source.id
+    local point::Point = source.point
+    local size::Int64  = source.size
+    local index::Int64 = source.index
+    local visiting_index::Int64 = source.visiting_index
+    local route_index::Int64    = source.route_index
+    local fixed::Bool = source.fixed
+
+
+    return Delivery(id, point, size, index, visiting_index, route_index, fixed)
+
+end
+
+export copyRoute!
+"""
+    copyRoute!(source::Array{Route, 1}, deliveries::Array{Delivery, 1}, destiny::Array{Route, 1})
+
+For a given set of routes `source`, copy it to `destiny`.
+In this context, deliveries must be the one to be synced to destiny.
+"""
+@inline function copyRoute!(source::Array{Route, 1}, deliveries::Array{Delivery, 1}, destiny::Array{Route, 1})
+
+    local size = length(source)
+
+    for i = 1:size
+        if (isassigned(destiny, i))
+            copyRoute!(source[i], deliveries, destiny[i])
+        else
+            local route = Route(i, Array{Delivery,1}(undef, length(source[i].deliveries)), 0.0, source[i].depot)
+            copyRoute!(source[i], deliveries, route)
+            push!(destiny, route)
+        end
+    end
+
+end
+
+export copyRoute!
+"""
+    copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)
+
+For a given route `source`, copy it to `destiny`.
+In this context, deliveries must be the one to be synced to destiny.
+"""
+@inline function copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)
+    
+    local length = length(source.deliveries)
+    
+    destiny.index    = source.index
+    destiny.distance = source.distance
+    destiny.depot    = source.depot
+    destiny.capacity = source.capacity
+    destiny.free     = source.free
+    destiny.centroid = source.centroid
+
+    for i = 2:length - 1
+        local idx = source.deliveries[i].index
+        if (isassigned(destiny.deliveries, i))
+            destiny.deliveries[i] = deliveries[idx]
+        else
+            push!(destiny.deliveries, deliveries[idx])
+        end
+
+        deliveries[idx].visiting_index = i
+        deliveries[idx].route_index = destiny.index
+    end
+
+    if (length(destiny.deliveries) - 1 > length)
+        while (isassigned(destiny.deliveries, length + 1))
+            deleteat!(destiny.deliveries, length + 1)
+        end
+
+    elseif (length(destiny.deliveries) < length)
+        push!(destiny.deliveries, copyDelivery(source.deliveries[1]))
+    end
+
+    destiny.deliveries[length].visiting_index = length
+
+    if (length(destiny.deliveries) !== length || destiny.deliveries[1].id != source.deliveries[1].id || destiny.deliveries[end].id != source.deliveries[end].id)
+        throw("Error on copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)")
+    end
+
+end
+
+export copyDelivery!
+"""
+    copyDelivery!(source::Delivery)
+
+For a given delivery `source`, copy info into `destiny`.
+"""
+@inline function copyDelivery!(source::Delivery, destiny::Delivery)
+    
+    destiny.id    = source.id
+    destiny.point = source.point
+    destiny.size  = source.size
+    destiny.index = source.index
+    destiny.fixed = source.fixed
+    destiny.visiting_index = source.visiting_index
+    destiny.route_index    = source.route_index
 
 end
 

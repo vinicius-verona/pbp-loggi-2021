@@ -80,7 +80,7 @@ mutable struct Shift <: Neighbor
 end
 
 export execute
-function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1}) # Delta evaluation
+function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1}, deliveries::Array{Delivery, 1}) # Delta evaluation
 
     # Update some statistics regarding the move execution
     move.hasMove = false
