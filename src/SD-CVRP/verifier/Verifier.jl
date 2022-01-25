@@ -52,9 +52,28 @@ Verify if every delivery appears only once in the solution.
 """
 function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Solution, 1})::Bool
 
+    local matrix = deepcopy(auxiliar.distances)
+
     # In the distance matrix, set the primary diagonal to zero
+    local size = size(matrix)[1]
+    for i = 1 : size
+        matrix[i,i] = 0
+    end
+
     # For every delivery, takeaway 1 from distance matrix in the due primary diagonal
     # If at any time, a matrix element (in the main diagonal) is < -1, there is an error
+    foreach(route -> begin
+        for i in route.deliveries[begin + 1 : end - 1]
+            local idx = i.index
+            matrix[idx, idx] -= 1
+
+            if (matrix[idx, idx] < -1)
+                return false
+            end
+        end
+    end, routes)
+
+    return true
 
 end
 
@@ -66,6 +85,31 @@ function verifyLackAssignment(auxiliar::CvrpAuxiliars, solution::Array{Solution,
     # In the distance matrix, set the primary diagonal to zero
     # For every delivery, takeaway 1 from distance matrix in the due primary diagonal
     # If in the end, a matrix element (in the main diagonal) is = 0, there is an error
+
+    local matrix = deepcopy(auxiliar.distances)
+
+    # In the distance matrix, set the primary diagonal to zero
+    local size = size(matrix)[1]
+    for i = 1 : size
+        matrix[i,i] = 0
+    end
+
+    # For every delivery, takeaway 1 from distance matrix in the due primary diagonal
+    foreach(route -> begin
+        for i in route.deliveries[begin + 1 : end - 1]
+            local idx = i.index
+            matrix[idx, idx] -= 1
+        end
+    end, routes)
+
+    # If at any time, a matrix element (in the main diagonal) is < -1, there is an error
+    for i = 2 : size
+        if (matrix[i,i] === 0)
+            return false
+        end
+    end
+
+    return true
 
 end
 
@@ -91,7 +135,7 @@ end
 
 """
 Verify if the sum of route distances matches the sum of route actual driven path.
-    
+
 Cases of failure: 
   - if current route distance field does not match the actual driven distance by the route
 """
