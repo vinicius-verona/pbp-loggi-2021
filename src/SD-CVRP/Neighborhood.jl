@@ -10,12 +10,11 @@ abstract type Neighbor end
 RouteOrNothing  = Union{Route, Nothing}
 RoutesOrNothing = Union{Array{Route,1}, Nothing}
 
+DIR = "$(@__DIR__)/Neighborhood/"
+FILES = readdir(DIR)
+filter!(x -> occursin(r".+\.jl", x), FILES)
+foreach(file -> include("$DIR$file"), FILES)
 
-# DIR = "$(@__DIR__)/Neighborhood/"
-# FILES = readdir(DIR)
-# filter!(x -> occursin(r".+\.jl", x), FILES)
-# foreach(file -> include("$DIR$file"), FILES)
-
-include("SwapDeliveries.jl")
+# include("SwapDeliveries.jl")
 
 end # module
