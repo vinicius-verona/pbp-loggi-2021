@@ -25,11 +25,14 @@ function verify(;instance::CvrpData, auxiliar::CvrpAuxiliars, solution::Array{So
 
 end
 
-# Verify if every route starts and ends at depot
-# Cases of failure: 
-#   - if depot is in the middle of a route
-#   - if depot there is only one depot in the route
-@inline function verifyRouteStructure(solution::Array{Solution, 1})::Bool
+"""
+Verify if every route starts and ends at depot.
+
+Cases of failure: 
+   - if depot is in the middle of a route
+   - if depot there is only one depot in the route
+"""
+function verifyRouteStructure(solution::Array{Solution, 1})::Bool
 
     foreach(route -> begin
         if (!occursin(lowercase(route.deliveries[begin].id), "depot")
@@ -44,7 +47,9 @@ end
 
 end
 
-# Verify if every delivery appears only once in the solution
+"""
+Verify if every delivery appears only once in the solution.
+"""
 function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Solution, 1})::Bool
 
     # In the distance matrix, set the primary diagonal to zero
@@ -53,7 +58,9 @@ function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Solutio
 
 end
 
-# Verify if every delivery appears in the solution
+"""
+Verify if every delivery appears in the solution.
+"""
 function verifyLackAssignment(auxiliar::CvrpAuxiliars, solution::Array{Solution, 1})::Bool
 
     # In the distance matrix, set the primary diagonal to zero
@@ -62,7 +69,9 @@ function verifyLackAssignment(auxiliar::CvrpAuxiliars, solution::Array{Solution,
 
 end
 
-# Verify if sum of delivery sizes per route does not exceed capacity.
+"""
+Verify if sum of delivery sizes per route does not exceed capacity.
+"""
 function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Solution, 1})::Bool
 
     foreach(route -> begin
@@ -80,9 +89,12 @@ function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Solution, 1})::
 
 end
 
-# Verify if the sum of route distances matches the sum of route actual driven path.
-# Cases of failure: 
-#   - if current route distance field does not match the actual driven distance by the route
+"""
+Verify if the sum of route distances matches the sum of route actual driven path.
+    
+Cases of failure: 
+  - if current route distance field does not match the actual driven distance by the route
+"""
 function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Solution, 1})::Bool
     
     foreach(route -> begin
