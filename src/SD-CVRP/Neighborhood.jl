@@ -1,6 +1,6 @@
 module Neighborhood
 
-using CVRP_Structures: CvrpAuxiliars
+using CVRP_Structures: CvrpAuxiliars, Route, Delivery
 using CVRP_Controllers: getInsertionDistance, getDistance, pushDelivery!, 
                         deleteDelivery!, getStringSize, getBestInsertionPosition, getClosestRoute
 
@@ -11,9 +11,11 @@ RouteOrNothing  = Union{Route, Nothing}
 RoutesOrNothing = Union{Array{Route,1}, Nothing}
 
 
-DIR = "$(@__DIR__)/Neighborhood/"
-FILES = readdir(DIR)
-filter!(x -> occursin(r".+\.jl", x), FILES)
-foreach(file -> include("$DIR$file"), FILES)
+# DIR = "$(@__DIR__)/Neighborhood/"
+# FILES = readdir(DIR)
+# filter!(x -> occursin(r".+\.jl", x), FILES)
+# foreach(file -> include("$DIR$file"), FILES)
+
+include("SwapDeliveries.jl")
 
 end # module

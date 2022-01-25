@@ -7,7 +7,7 @@ using Cluster_Instance: train
 using Initial_Solution: greedySolution
 using ClarkeWright: clarkeWrightSolution
 using Heuristic_Solution: ils 
-using Plots 
+# using Plots 
 
 
 # Execution Structures
@@ -94,19 +94,23 @@ function cvrp(arguments::Argument)
     execution_stats.cw_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
     
-    local cw_solution = clarkeWrightSolution(instance, auxiliars, Int(round(length(instance.deliveries)*0.2, RoundDown)))
+    # local cw_solution = clarkeWrightSolution(instance, auxiliars, Int(round(length(instance.deliveries)*0.2, RoundDown)))
+    local cw_solution = clarkeWrightSolution(instance, auxiliars, length(instance.deliveries))
     execution_stats.cw_completion_timestamp = now()
     println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, cw_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.cw_completion_timestamp)
-    
 
     # Heuristic Solution
     println("\n======> Start Heuristic solution")
     execution_stats.heuristic_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.heuristic_initial_timestamp)
 
-    local heuristic_solution = ils(instance, auxiliars, cw_solution, Int(round(length(instance.deliveries)*0.2, RoundDown)))
+    # local heuristic_solution = ils(auxiliars, cw_solution, Int(round(length(instance.deliveries)*0.2, RoundDown)))
+    local heuristic_solution = ils(auxiliars, cw_solution, deepcopy(instance.deliveries))
     execution_stats.heuristic_completion_timestamp = now()
+    println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, heuristic_solution)), " routes")
+    println("=> Compl. timestamp: ", execution_stats.heuristic_completion_timestamp)
+    
 
     # Generate Output
     # generateOutput(greedy_solution)

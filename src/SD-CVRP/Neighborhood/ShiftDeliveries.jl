@@ -1,3 +1,8 @@
+using CVRP_Structures: CvrpData, CvrpAuxiliars, Route, Delivery
+using CVRP_Controllers: getDistance, pushDelivery!, deleteDelivery!,
+                        getBestInsertionPosition, getClosestRoute,
+                        getStringSize, getStringDistance, getInsertionDistance
+
 """
     - This neighbor considers that, for a route of type {depot -> d1 -> d2 ... -> dk -> depot}
     - if dn, where n <= k, is the first one not fixed to the route, then dn+1...dk are also not fixed.
@@ -27,10 +32,10 @@ mutable struct Shift <: Neighbor
     move_size::Int64 # The quantity of free space in removal route after move is executed
     move_sizes::Array{Int64, 1} # The quantity of free space in insertion routes after move is executed
 
-    original_distance::Int64 # The distance in removal route
-    original_distances::Array{Int64, 1} # The distance in insertion routes
-    move_distance::Int64 # The distance in removal route after move is executed
-    move_distances::Array{Int64, 1} # The distance in insertion routes after move is executed
+    original_distance::Float64 # The distance in removal route
+    original_distances::Array{Float64, 1} # The distance in insertion routes
+    move_distance::Float64 # The distance in removal route after move is executed
+    move_distances::Array{Float64, 1} # The distance in insertion routes after move is executed
 
     accept::Int64
     reject::Int64
@@ -82,8 +87,10 @@ end
 export execute
 function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1}, deliveries::Array{Delivery, 1}) # Delta evaluation
 
+    # WARNING: Where is it setting the string?
+     
     # Update some statistics regarding the move execution
-    move.hasMove = false
+    shift.hasMove = false
 
     # Selecting route
     shift.route = rand(routes)
@@ -139,8 +146,8 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
     shift.move_distance = shift.route.distance
 
     # Update some statistics regarding the move execution
-    move.hasMove = true
-    move.total += 1
+    shift.hasMove = true
+    shift.total += 1
 
     # Calculate delta value
     return (shift.move_distance + move_routes_distance) - (shift.original_distance + original_routes_distance)
@@ -159,6 +166,6 @@ function reject(cvrp_aux::CvrpAuxiliars, shift::Shift)
     end
 
     # Update move execution statistics
-    move.reject += 1
+    shift.reject += 1
 
 end

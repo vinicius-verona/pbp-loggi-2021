@@ -1,3 +1,8 @@
+using CVRP_Structures: CvrpData, CvrpAuxiliars, Route, Delivery
+using CVRP_Controllers: getDistance, pushDelivery!, deleteDelivery!,
+                        getBestInsertionPosition, getClosestRoute,
+                        getStringSize, getStringDistance, getInsertionDistance
+
 """
     - This neighbor considers that, for a route of type {depot -> d1 -> d2 ... -> dk -> depot}
     - if dn, where n <= k, is the first one not fixed to the route, then dn+1...dk are also not fixed.
@@ -27,10 +32,10 @@ mutable struct Swap <: Neighbor
     move_size1::Int64 # The quantity of free space in first_route after move is pre-executed
     move_size2::Int64 # The quantity of free space in second_route after move is pre-executed
 
-    original_distance1::Int64 # The distance in first_route
-    original_distance2::Int64 # The distance in second_route
-    move_distance1::Int64 # The distance in first_route after move is pre-executed
-    move_distance2::Int64 # The distance in second_route after move is pre-executed
+    original_distance1::Float64 # The distance in first_route
+    original_distance2::Float64 # The distance in second_route
+    move_distance1::Float64 # The distance in first_route after move is pre-executed
+    move_distance2::Float64 # The distance in second_route after move is pre-executed
 
     accept::Int64
     reject::Int64
@@ -95,7 +100,7 @@ export execute
 function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _) # Delta evaluation
 
     # Update some statistics regarding the move execution
-    move.hasMove = false
+    swap.hasMove = false
 
     # Selecting routes
     swap.first_route = rand(routes)
@@ -123,8 +128,8 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
         return typemax(Int64)
     end
 
-    swap.r1_starts_at = rand(unfixedR1:r1_size - swap.swap_size)
-    swap.r2_starts_at = rand(unfixedR2:r2_size - swap.swap_size)
+    swap.r1_starts_at = rand(unfixedR1:r1_size - swap.swap_size - 1)
+    swap.r2_starts_at = rand(unfixedR2:r2_size - swap.swap_size - 1)
     swap.r1_ends_at   = swap.r1_starts_at + swap.swap_size - 1
     swap.r2_ends_at   = swap.r2_starts_at + swap.swap_size - 1
 
@@ -135,15 +140,14 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     swap.original_distance2 = swap.second_route.distance
     
     # Store selected string
-    swap.first_string  = swap.first_route[swap.r1_starts_at:swap.r1_ends_at]
-    swap.second_string = swap.second_route[swap.r2_starts_at:swap.r2_ends_at]
+    swap.first_string  = swap.first_route.deliveries[swap.r1_starts_at:swap.r1_ends_at]
+    swap.second_string = swap.second_route.deliveries[swap.r2_starts_at:swap.r2_ends_at]
 
     if (swap.first_route.free + getStringSize(swap.first_string) - getStringSize(swap.second_string) < 0
         || swap.second_route.free + getStringSize(swap.second_string) - getStringSize(swap.first_string) < 0)
         
         swap.hasMove = false
         return typemax(Int64)
-
     end
 
     # Calculate move value
@@ -153,8 +157,8 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     swap.move_distance2 += getInsertionDistance(cvrp_aux, swap.second_route, swap.r2_starts_at, swap.swap_size, swap.first_string)
 
     # Update some statistics regarding the move execution
-    move.hasMove = true
-    move.total += 1
+    swap.hasMove = true
+    swap.total += 1
 
     # Calculate delta value
     return (swap.move_distance1 + swap.move_distance2) - (swap.original_distance1 + swap.original_distance2)
@@ -167,11 +171,11 @@ function accept(cvrp_aux::CvrpAuxiliars, swap::Swap)
     # Swap deliveries between the selected routes
     deleteDelivery!(cvrp_aux, swap.first_route, swap.r1_starts_at, swap.r1_ends_at)
     deleteDelivery!(cvrp_aux, swap.second_route, swap.r2_starts_at, swap.r2_ends_at)
-    pushDelivery!(cvrp_aux, swap.first_route, swap.second_route, swap.r1_starts_at)
-    pushDelivery!(cvrp_aux, swap.second_route, swap.first_route, swap.r2_starts_at)
+    pushDelivery!(cvrp_aux, swap.first_route, swap.second_string, swap.r1_starts_at)
+    pushDelivery!(cvrp_aux, swap.second_route, swap.first_string, swap.r2_starts_at)
 
     # Update move execution statistics
-    move.accept += 1
+    swap.accept += 1
 
 end
 

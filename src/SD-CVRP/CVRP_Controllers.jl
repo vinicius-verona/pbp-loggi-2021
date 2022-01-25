@@ -86,20 +86,21 @@ end
 
 export deleteDelivery!
 """
-    deleteDelivery!(cvrp_aux::CvrpAuxliars, route::Route, idx::Int64, limit::Int64)
+    deleteDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, limit::Int64)
 
 Remove the selected string of deliveries from `route`. The string starts at `idx` and ends at `limit`
 """
-@inline function deleteDelivery!(cvrp_aux::CvrpAuxliars, route::Route, idx::Int64, limit::Int64)
+@inline function deleteDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64, limit::Int64)
 
     if (idx < 1)
         throw("Passed argument is out of bound. IDX: $idx is not a valid value.")
     end
+
     if (limit > length(route.deliveries))
-        throw("Passed argument is out of bound. Limit: $limit is not a valid value.")
+        throw("Passed argument is out of bound. Limit: $limit is not a valid value. | Length of route: $(length(route.deliveries)) | Limit: $limit")
     end
 
-    if (length(findall(x -> x.fixed === true, route.deliveries[idx:limit])))
+    if (length(findall(x -> x.fixed === true, route.deliveries[idx:limit])) > 0)
         @warn "Removing fixed deliveries from route."
     end
 
@@ -154,18 +155,16 @@ For a given sub-route (`string`), returns the string total distance.
 """
 function getStringDistance(cvrp_aux::CvrpAuxiliars, string::Array{Delivery, 1})
 
-    let value = 0, idx = 0
-        
-        for idx = 1 : length(string) - 1
-            value += getDistance(cvrp_aux, string[idx], string[idx + 1])
-        end
-
-        return value
-        
+    local value = 0
+    local idx   = 0
+    
+    for idx = 1 : length(string) - 1
+        value += getDistance(cvrp_aux, string[idx], string[idx + 1])
     end
+
+    return value
     
 end
-
 
 export getStringSize
 """
@@ -175,16 +174,15 @@ For a given sub-route (`string`), returns the string total size.
 """
 function getStringSize(string::Array{Delivery, 1})
 
-    let value = 0, idx = 0
+    local value = 0
+    local idx   = 0
         
-        for idx = 1 : length(string) - 1
-            value += string[idx].size
-        end
-
-        return value
-        
+    for idx = 1 : length(string) - 1
+        value += string[idx].size
     end
-    
+
+    return value
+
 end
 
 
@@ -358,7 +356,7 @@ For a given delivery, find the closest route which has enough space to have `del
 **Returns:**
 * The position of the closest route.
 """
-@inline function getClosestRoute(cvrp_auxiliar::CvrpAuxiliars, deliveries::Array{delivery, 1}, routes::Array{Route, 1}, delivery::Delivery)
+@inline function getClosestRoute(cvrp_auxiliar::CvrpAuxiliars, deliveries::Array{Delivery, 1}, routes::Array{Route, 1}, delivery::Delivery)
 
     foreach(d -> begin
         for tuple in d

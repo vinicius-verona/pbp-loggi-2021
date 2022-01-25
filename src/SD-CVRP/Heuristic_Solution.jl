@@ -1,10 +1,7 @@
 module Heuristic_Solution
 
-using CVRP_Structures: CvrpData, CvrpAuxiliars, Route
-using CVRP_Controllers: getDistance, pushDelivery!, deleteDelivery!,
-                        getBestInsertionPosition, getClosestRoute,
-                        getStringSize, getStringDistance, getInsertionDistance,
-                        copyRoute!
+using CVRP_Structures: CvrpData, CvrpAuxiliars, Route, Delivery
+using CVRP_Controllers: copyRoute!
 
 using Neighborhood
 using Dates
@@ -43,7 +40,7 @@ end
 #-----------------------------#
 
 export ils
-function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot::Int64; ils_controller::Controller{IlsController} = nothing, rna_controller::Controller{RnaController} = nothing)
+function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries::Array{Delivery, 1}; ils_controller::Controller{IlsController} = nothing, rna_controller::Controller{RnaController} = nothing)
 
     local editable_deliveries = deepcopy(slot_deliveries)
     local editable_solution = deepcopy(solution)
@@ -54,13 +51,14 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot::Int64; il
     local swap_3x3 = Swap(3)
     local swap_4x4 = Swap(4)
     
-    local shift_1  = Shift(1)
-    local shift_2  = Shift(2)
-    local shift_3  = Shift(3)
-    local shift_4  = Shift(4)
+    # local shift_1  = Shift(1)
+    # local shift_2  = Shift(2)
+    # local shift_3  = Shift(3)
+    # local shift_4  = Shift(4)
 
-    local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
-                                       shift_1, shift_2, shift_3, shift_4]
+    local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
+    # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
+                                    #    shift_1, shift_2, shift_3, shift_4]
 
     if (ils_controller === nothing)
         if (slot_deliveries === nothing)
@@ -74,7 +72,12 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot::Int64; il
     end
     
     if (rna_controller === nothing)
-        rna_controller = RnaController(1, 1, length(slot), 0, length(slot), length(slot))
+        # rna_controller = RnaController(1, 1, length(slot), 0, length(slot), length(slot))
+        rna_controller = RnaController(1, 1, length(slot_deliveries), 0, length(slot_deliveries), length(slot_deliveries))
+    end
+
+    if (ils_controller.slot_deliveries === nothing)
+        throw("Error! An array of avaliable (editable) deliveries is required.")
     end
 
     # Link deliveries-solution to ensure that when a solution is modified,
@@ -90,7 +93,10 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot::Int64; il
             
             local move = rand(ils_controller.moves)
             local cost = execute(cvrp_aux, move, editable_solution, ils_controller.editable_deliveries)
-            accept(cvrp_aux, move)
+            
+            if (move.hasMove)
+                accept(cvrp_aux, move)
+            end
             
             ils_controller.edited_solution += cost
         end
@@ -122,6 +128,8 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot::Int64; il
         end
     end
 
+    return solution
+
 end
 
 
@@ -143,7 +151,9 @@ function rna(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, ils_controller:
             end
         
         else
-            reject(cvrp_aux, move)
+            if (move.hasMove)
+                reject(cvrp_aux, move)
+            end
         end
 
     end
