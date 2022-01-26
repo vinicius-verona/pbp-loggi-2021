@@ -7,21 +7,44 @@ using Load_Instance
 using CVRP_Controllers: getStringDistance
 
 export verify
-function verify(;instance::CvrpData, auxiliar::CvrpAuxiliars, solution::Array{Solution, 1})
+function verify(;instance::CvrpData, auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
 
-    println("\n======> Start loading instance data")
-    println("=> Instance name     : ", instance.name)
-    println("=> Instance region   : ", instance.region)
-    println("=> Instance capacity : ", instance.capacity)
-    println("=> Instance # of deliveries   : ", length(instance.deliveries))
-    println("=> Instance min # of vehicles : ", instance.min_number_routes, " routes")
-    
-    
     println("\n======> Start verifying if every route starts and end in depot")
+    if (verifyRouteStructure(solution))
+        println("\t-> Status: [PASSED]")
+    else
+        println("\t-> Status: [FAILED]")
+    end
+    
     println("\n======> Start verifying lack of delivery assignment")
+    if (verifyLackAssignment(auxiliar, solution))
+        println("\t-> Status: [PASSED]")
+    else
+        println("\t-> Status: [FAILED]")
+    end
+    
     println("\n======> Start verifying double  delivery assignment")
+    if (verifyDoubleAssignment(auxiliar, solution))
+        println("\t-> Status: [PASSED]")
+    else
+        println("\t-> Status: [FAILED]")
+    end
+    
     println("\n======> Start verifying sum  of delivery sizes")
+    if (verifySumSizes(auxiliar, solution))
+        println("\t-> Status: [PASSED]")
+    else
+        println("\t-> Status: [FAILED]")
+    end
+    
     println("\n======> Start verifying sum  of delivery distances")
+    if (verifySumDistance(auxiliar, solution))
+        println("\t-> Status: [PASSED]")
+    else
+        println("\t-> Status: [FAILED]")
+    end
+
+    println()
 
 end
 
@@ -32,13 +55,13 @@ Cases of failure:
    - if depot is in the middle of a route
    - if depot there is only one depot in the route
 """
-function verifyRouteStructure(solution::Array{Solution, 1})::Bool
+function verifyRouteStructure(solution::Array{Route, 1})::Bool
 
     foreach(route -> begin
-        if (!occursin(lowercase(route.deliveries[begin].id), "depot")
+        if (!occursin(lowercase(route.deliveries[begin].id), "depot"))
             return false
         end
-        if (!occursin(lowercase(route.deliveries[end].id), "depot")
+        if (!occursin(lowercase(route.deliveries[end].id), "depot"))
             return false
         end
     end, solution)
@@ -50,13 +73,13 @@ end
 """
 Verify if every delivery appears only once in the solution.
 """
-function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Solution, 1})::Bool
+function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
 
-    local matrix = deepcopy(auxiliar.distances)
+    local matrix = deepcopy(auxiliar.distance_matrix)
 
     # In the distance matrix, set the primary diagonal to zero
-    local size = size(matrix)[1]
-    for i = 1 : size
+    local matrix_size = size(matrix)[1]
+    for i = 1 : matrix_size
         matrix[i,i] = 0
     end
 
@@ -71,7 +94,7 @@ function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Solutio
                 return false
             end
         end
-    end, routes)
+    end, solution)
 
     return true
 
@@ -80,17 +103,13 @@ end
 """
 Verify if every delivery appears in the solution.
 """
-function verifyLackAssignment(auxiliar::CvrpAuxiliars, solution::Array{Solution, 1})::Bool
+function verifyLackAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
+
+    local matrix = deepcopy(auxiliar.distance_matrix)
 
     # In the distance matrix, set the primary diagonal to zero
-    # For every delivery, takeaway 1 from distance matrix in the due primary diagonal
-    # If in the end, a matrix element (in the main diagonal) is = 0, there is an error
-
-    local matrix = deepcopy(auxiliar.distances)
-
-    # In the distance matrix, set the primary diagonal to zero
-    local size = size(matrix)[1]
-    for i = 1 : size
+    local matrix_size = size(matrix)[1]
+    for i = 1 : matrix_size
         matrix[i,i] = 0
     end
 
@@ -100,10 +119,10 @@ function verifyLackAssignment(auxiliar::CvrpAuxiliars, solution::Array{Solution,
             local idx = i.index
             matrix[idx, idx] -= 1
         end
-    end, routes)
+    end, solution)
 
-    # If at any time, a matrix element (in the main diagonal) is < -1, there is an error
-    for i = 2 : size
+    # If at any time, a matrix element (in the main diagonal) is = 0, there is an error
+    for i = 2 : matrix_size
         if (matrix[i,i] === 0)
             return false
         end
@@ -116,7 +135,7 @@ end
 """
 Verify if sum of delivery sizes per route does not exceed capacity.
 """
-function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Solution, 1})::Bool
+function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
 
     foreach(route -> begin
         local size = 0
@@ -139,7 +158,7 @@ Verify if the sum of route distances matches the sum of route actual driven path
 Cases of failure: 
   - if current route distance field does not match the actual driven distance by the route
 """
-function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Solution, 1})::Bool
+function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
     
     foreach(route -> begin
         if (abs(route.distance - getStringDistance(auxiliar, route.deliveries)) > 0.00001)

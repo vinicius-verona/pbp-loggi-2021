@@ -504,7 +504,7 @@ In this context, deliveries must be the one to be synced to destiny.
 """
 @inline function copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)
     
-    local length = length(source.deliveries)
+    local size = length(source.deliveries)
     
     destiny.index    = source.index
     destiny.distance = source.distance
@@ -513,7 +513,7 @@ In this context, deliveries must be the one to be synced to destiny.
     destiny.free     = source.free
     destiny.centroid = source.centroid
 
-    for i = 2:length - 1
+    for i = 2:size - 1
         local idx = source.deliveries[i].index
         if (isassigned(destiny.deliveries, i))
             destiny.deliveries[i] = deliveries[idx]

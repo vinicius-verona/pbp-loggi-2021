@@ -1,4 +1,5 @@
 push!(LOAD_PATH, "src/SD-CVRP")
+push!(LOAD_PATH, "src/SD-CVRP/verifier/")
 using PBP_Loggi
 
 """

@@ -7,6 +7,7 @@ using Cluster_Instance: train
 using Initial_Solution: greedySolution
 using ClarkeWright: clarkeWrightSolution
 using Heuristic_Solution: ils 
+using Verifier
 # using Plots 
 
 
@@ -110,7 +111,6 @@ function cvrp(arguments::Argument)
     execution_stats.heuristic_completion_timestamp = now()
     println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, heuristic_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.heuristic_completion_timestamp)
-    
 
     # Generate Output
     # generateOutput(greedy_solution)
@@ -120,6 +120,12 @@ function cvrp(arguments::Argument)
     println("Greedy   : ", sum(map(x -> x.distance, greedy_solution)) / 1000)
     println("Heuristic: ", sum(map(x -> x.distance, heuristic_solution)) / 1000)
     println()
+    
+    # Verify
+    println("\n\n======> Verifying Initial Solution <======")
+    verify(instance=instance, auxiliar=auxiliars, solution=cw_solution)
+    println("\n\n======> Verifying Heuristic Solution <======")
+    verify(instance=instance, auxiliar=auxiliars, solution=heuristic_solution)
     
 end
 
