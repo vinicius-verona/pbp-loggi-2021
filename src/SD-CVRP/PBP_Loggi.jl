@@ -3,6 +3,7 @@ module PBP_Loggi
 using Dates
 using CVRP_Structures
 using Load_Instance
+using CVRP_Controllers: fixAssignment!
 using Cluster_Instance: train
 using Initial_Solution: greedySolution
 using ClarkeWright: clarkeWrightSolution
@@ -144,7 +145,7 @@ function cvrp(arguments::Argument)
     # println("\n\n======> Verifying Heuristic Solution <======")
     # verify(instance=instance, auxiliar=auxiliars, solution=heuristic_solution)
     println("\n\n======> Verifying Solver Solution <======")
-    verify(instance=instance, auxiliar=auxiliars, solution=solver_solution)
+    verify(auxiliar=auxiliars, solution=solver_solution)
     
 end
 
@@ -168,7 +169,7 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
     local deliveries = instance.deliveries[1 : current_slot]
 
     if (solution !== nothing)
-        solution = clarkeWrightSolution(instance, auxiliar, deliveries, solution=solution)
+        solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution=solution)
         # solution = ils(auxiliar, solution, deliveries)
         
     else
@@ -176,7 +177,7 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
         # solution = ils(auxiliar, solution, deliveries)
     end
 
-    # fixAssignment!(solution, deliveries)
+    fixAssignment!(solution, deliveries)
     
     if (LAST_SLOT)
         return solution

@@ -3,6 +3,26 @@ module CVRP_Controllers
 using CVRP_Structures: Point, Delivery, CvrpAuxiliars, Route
 using Distances
 
+export fixAssignment!
+"""
+    fixAssignment!(routes::Array{Route, 1}, deliveries::Array{Delivery, 1})
+
+Set each `delivery` in `deliveries` and `routes` as fixed to its assigned route.
+"""
+function fixAssignment!(routes::Array{Route, 1}, deliveries::Array{Delivery, 1})
+
+    foreach(route -> begin
+        map(delivery -> begin
+            delivery.fixed = true
+            
+            if (!occursin(lowercase(delivery.id), "depot"))
+                deliveries[delivery.index].fixed = true
+            end
+        end, route.deliveries)
+    end, routes)
+
+end
+
 export getDistance
 """
     getDistance(cvrp_aux::CvrpAuxiliars, a::Delivery, b::Delivery)::Float64
@@ -27,9 +47,9 @@ Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it 
 """
 @inline function pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64 = -1)
 
-    if (d.fixed && route.index != d.route_index)
-        throw("Cannot push a fixed delivery into another route. Delivery ID: $(d.id)")
-    end
+    # if (d.fixed && route.index != d.route_index)
+    #     throw("Cannot push a fixed delivery into another route. Delivery ID: $(d.id)")
+    # end
 
     if (pos == -1)
         pos = length(route.deliveries)
@@ -118,6 +138,26 @@ Remove the selected string of deliveries from `route`. The string starts at `idx
     for i in route.deliveries
         i.visiting_index = counter
         counter += 1
+    end
+
+end
+
+export insertRoute!
+"""
+    insertRoute!(route::Route, idx::Int64, routes::Array{Route,1})
+
+Insert a route on index `idx` from `routes`.
+"""
+@inline function insertRoute!(route::Route, idx::Int64, routes::Array{Route,1})
+
+    insert!(routes, idx, route)
+
+    for i = idx:length(routes)
+        routes[i].index = i
+
+        for j in routes[i].deliveries
+            j.route_index = i
+        end
     end
 
 end

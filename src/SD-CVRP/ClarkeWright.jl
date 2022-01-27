@@ -1,7 +1,7 @@
 module ClarkeWright
 
 using CVRP_Structures: Delivery, CvrpData, CvrpAuxiliars, Route, Point, Controller
-using CVRP_Controllers: getInsertionDistance, getDistance, pushDelivery!, deleteRoute!
+using CVRP_Controllers: getInsertionDistance, getDistance, pushDelivery!, deleteRoute!, insertRoute!
 
 struct Savings
 
@@ -126,15 +126,34 @@ function concatRoutes!(cvrp_aux::CvrpAuxiliars, first_route::Route, second_route
 
     local r1r2 = getInsertionDistance(cvrp_aux, first_route, end_position1, second_route.deliveries[start_position2:end_position2])
     local r2r1 = getInsertionDistance(cvrp_aux, second_route, end_position2, first_route.deliveries[start_position1:end_position1])
+    local route_index = -1 
+
+    if (pair.from.fixed)
+        route_index = pair.from.route_index
+    elseif (pair.to.fixed)
+        route_index = pair.to.route_index
+    end
 
     if (r1r2 <= r2r1)
         # Insert r2 string to r1
         pushDelivery!(cvrp_aux, first_route, second_route.deliveries[start_position2:end_position2])
         deleteRoute!(second_route.index, routes)
+
+        if (route_index === second_route.index)
+            local idx = first_route.index
+            insertRoute!(first_route, route_index, routes)
+            deleteRoute!(idx, routes)
+        end
     else
         # Insert r1 string to r2
         pushDelivery!(cvrp_aux, second_route, first_route.deliveries[start_position1:end_position1])
         deleteRoute!(first_route.index, routes)
+
+        if (route_index === first_route.index)
+            local idx = second_route.index
+            insertRoute!(second_route, route_index, routes)
+            deleteRoute!(idx, routes)
+        end
     end
 
 end

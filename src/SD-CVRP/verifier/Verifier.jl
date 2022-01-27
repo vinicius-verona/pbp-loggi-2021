@@ -7,7 +7,7 @@ using Load_Instance
 using CVRP_Controllers: getStringDistance
 
 export verify
-function verify(;instance::CvrpData, auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
+function verify(;auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
 
     println("======> Start verifying if every route starts and end in depot")
     if (verifyRouteStructure(solution))

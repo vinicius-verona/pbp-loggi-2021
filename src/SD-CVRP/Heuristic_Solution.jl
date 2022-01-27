@@ -1,13 +1,10 @@
 module Heuristic_Solution
 
-using CVRP_Structures: CvrpData, CvrpAuxiliars, Route, Delivery
+using CVRP_Structures: CvrpData, CvrpAuxiliars, Route, Delivery, Controller
 using CVRP_Controllers: copyRoute!
 
 using Neighborhood
 using Dates
-
-export Controller
-Controller{Type} = Union{Type, Nothing}
 
 export IlsController
 mutable struct IlsController
