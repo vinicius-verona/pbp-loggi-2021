@@ -6,6 +6,7 @@ using CVRP_Controllers: copyRoute!
 using Neighborhood
 using Dates
 
+export Controller
 Controller{Type} = Union{Type, Nothing}
 
 export IlsController
@@ -132,7 +133,7 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
 
 end
 
-
+export rna
 function rna(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, ils_controller::IlsController, rna_controller::RnaController)
     
     local i = 1

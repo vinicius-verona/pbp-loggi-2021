@@ -1,5 +1,9 @@
 module CVRP_Structures
 
+
+export Controller
+Controller{Type} = Union{Type, Nothing}
+
 # TODO: Add typed kwargs to constructors
 
 using Dates

@@ -1,6 +1,6 @@
 module ClarkeWright
 
-using CVRP_Structures: Delivery, CvrpData, CvrpAuxiliars, Route, Point
+using CVRP_Structures: Delivery, CvrpData, CvrpAuxiliars, Route, Point, Controller
 using CVRP_Controllers: getInsertionDistance, getDistance, pushDelivery!, deleteRoute!
 
 struct Savings
@@ -28,10 +28,10 @@ adapted to the dynamic version of CVRP (DCVRP).
 **Returns:**
 * Array of `Route`, each containing different deliveries to be attended by the route.
 """
-function clarkeWrightSolution(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, slot::Int64=10)
+function clarkeWrightSolution(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, deliveries::Array{Delivery, 1}; solution::Controller{Array{Route, 1}}=nothing)
 
-    local routes::Array{Route, 1} = []
-    local pairs = getPairs(instance, cvrp_auxiliars, slot) # Get combination pairs of deliveries on slot
+    local routes::Array{Route, 1} = solution === nothing ? [] : solution
+    local pairs = getPairs(instance, cvrp_auxiliars, deliveries) # Get combination pairs of deliveries on slot
     sort!(pairs, alg = MergeSort, by = x -> x.savings, rev = true)
 
     for p in pairs
@@ -120,13 +120,13 @@ function concatRoutes!(cvrp_aux::CvrpAuxiliars, first_route::Route, second_route
         adjacent2 = true
     end
 
-    if (!adjacent1 || !adjacent2)
+    if (!adjacent1 || !adjacent2 || (pair.from.fixed && pair.to.fixed))
         return
     end
 
     local r1r2 = getInsertionDistance(cvrp_aux, first_route, end_position1, second_route.deliveries[start_position2:end_position2])
     local r2r1 = getInsertionDistance(cvrp_aux, second_route, end_position2, first_route.deliveries[start_position1:end_position1])
-    
+
     if (r1r2 <= r2r1)
         # Insert r2 string to r1
         pushDelivery!(cvrp_aux, first_route, second_route.deliveries[start_position2:end_position2])
@@ -176,25 +176,26 @@ function concatRoutes!(cvrp_aux::CvrpAuxiliars, route::Route, delivery::Delivery
 end
 
 """
-    getPairs(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, slot::Int64)
+    getPairs(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, deliveries::Array{Delivery, 1})
 
-For a given slot, generate all possible combination of deliveries.
+For a given array of deliveries, generate all possible combination of deliveries.
 """
-function getPairs(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, slot::Int64)
+function getPairs(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, deliveries::Array{Delivery, 1})
 
-    local savings = Array{Savings,1}(undef, slot^2)
+    local size = length(deliveries)
+    local savings = Array{Savings,1}(undef, size^2)
     local depot = Delivery("DEPOT",instance.origin, 0, 0, 1, -1)
     local savings_counter = 1
 
-    for i = 1:slot
-        for j = 1:slot
+    for i = 1:size
+        for j = 1:size
             if (i !== j)
-                local di = getDistance(cvrp_auxiliars, depot, instance.deliveries[i])
-                local dj = getDistance(cvrp_auxiliars, depot, instance.deliveries[j])
-                local ij = getDistance(cvrp_auxiliars, instance.deliveries[i], instance.deliveries[j])
+                local di = getDistance(cvrp_auxiliars, depot, deliveries[i])
+                local dj = getDistance(cvrp_auxiliars, depot, deliveries[j])
+                local ij = getDistance(cvrp_auxiliars, deliveries[i], deliveries[j])
                 
-                if (di + dj > ij && instance.capacity > instance.deliveries[i].size + instance.deliveries[j].size)
-                    savings[savings_counter] = Savings(instance.deliveries[i], instance.deliveries[j], di + dj - ij)
+                if (di + dj > ij && instance.capacity > deliveries[i].size + deliveries[j].size)
+                    savings[savings_counter] = Savings(deliveries[i], deliveries[j], di + dj - ij)
                     savings_counter += 1
                 end
             end
@@ -209,7 +210,9 @@ function getPairs(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, slot::Int64
         end
     end
 
-    deleteat!(savings, idx:length(savings))
+    if (idx !== 0)
+        deleteat!(savings, idx:length(savings))
+    end
 
     return savings
 

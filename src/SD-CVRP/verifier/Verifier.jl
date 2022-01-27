@@ -9,35 +9,35 @@ using CVRP_Controllers: getStringDistance
 export verify
 function verify(;instance::CvrpData, auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
 
-    println("\n======> Start verifying if every route starts and end in depot")
+    println("======> Start verifying if every route starts and end in depot")
     if (verifyRouteStructure(solution))
         println("\t-> Status: [PASSED]")
     else
         println("\t-> Status: [FAILED]")
     end
     
-    println("\n======> Start verifying lack of delivery assignment")
+    println("======> Start verifying lack of delivery assignment")
     if (verifyLackAssignment(auxiliar, solution))
         println("\t-> Status: [PASSED]")
     else
         println("\t-> Status: [FAILED]")
     end
     
-    println("\n======> Start verifying double  delivery assignment")
+    println("======> Start verifying double  delivery assignment")
     if (verifyDoubleAssignment(auxiliar, solution))
         println("\t-> Status: [PASSED]")
     else
         println("\t-> Status: [FAILED]")
     end
     
-    println("\n======> Start verifying sum  of delivery sizes")
+    println("======> Start verifying sum  of delivery sizes")
     if (verifySumSizes(auxiliar, solution))
         println("\t-> Status: [PASSED]")
     else
         println("\t-> Status: [FAILED]")
     end
     
-    println("\n======> Start verifying sum  of delivery distances")
+    println("======> Start verifying sum  of delivery distances")
     if (verifySumDistance(auxiliar, solution))
         println("\t-> Status: [PASSED]")
     else

@@ -8,8 +8,12 @@ using Initial_Solution: greedySolution
 using ClarkeWright: clarkeWrightSolution
 using Heuristic_Solution: ils 
 using Verifier
-# using Plots 
 
+# Global variables used to controll solver
+SLOT_LENGTH     = 100
+SLOT_COUNTER    = 0
+LAST_SLOT       = false
+INSTANCE_LENGTH = 0
 
 # Execution Structures
 export Argument
@@ -50,6 +54,9 @@ mutable struct ExecStatistic
     heuristic_initial_timestamp::DateTime # Heuristic Solution timestamp
     heuristic_completion_timestamp::DateTime # Heuristic Solution timestamp
 
+    solver_initial_timestamp::DateTime # Solver Solution timestamp
+    solver_completion_timestamp::DateTime # Solver Solution timestamp
+
 end
 
 # CVRP Program
@@ -65,7 +72,9 @@ function cvrp(arguments::Argument)
     println("=> Instance # of deliveries   : ", length(instance.deliveries))
     println("=> Instance min # of vehicles : ", instance.min_number_routes, " routes")
     
-    local execution_stats = ExecStatistic(now(), now(), now(), now(), now(), now(), now(), now())
+    # Update INSTANCE_LENGTH variable
+    global INSTANCE_LENGTH = length(instance.deliveries)
+    local execution_stats = ExecStatistic(now(), now(), now(), now(), now(), now(), now(), now(), now(), now())
 
     # Clustering instance
     println("\n======> Start clustering instance")
@@ -87,55 +96,93 @@ function cvrp(arguments::Argument)
     println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, greedy_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
 
-    # TODO: Criar uma função para chamar clarkewright e ils recursivamente enquanto houverem entregas não alocadas (fixed = false)
-    # Ideia: criar um contador geral para a função, que tem o valor total de entregas e vai diminuindo com slots
-
     # Clarke-Wright Solution
-    println("\n======> Start Clarke-Wright solution")
-    execution_stats.cw_initial_timestamp = now()
-    println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
+    # println("\n======> Start Clarke-Wright solution")
+    # execution_stats.cw_initial_timestamp = now()
+    # println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
     
     # local cw_solution = clarkeWrightSolution(instance, auxiliars, Int(round(length(instance.deliveries)*0.2, RoundDown)))
-    local cw_solution = clarkeWrightSolution(instance, auxiliars, length(instance.deliveries))
-    execution_stats.cw_completion_timestamp = now()
-    println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, cw_solution)), " routes")
-    println("=> Compl. timestamp: ", execution_stats.cw_completion_timestamp)
+    # local cw_solution = clarkeWrightSolution(instance, auxiliars, length(instance.deliveries))
+    # execution_stats.cw_completion_timestamp = now()
+    # println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, cw_solution)), " routes")
+    # println("=> Compl. timestamp: ", execution_stats.cw_completion_timestamp)
 
     # Heuristic Solution
-    println("\n======> Start Heuristic solution")
-    execution_stats.heuristic_initial_timestamp = now()
-    println("=> Start timestamp : ", execution_stats.heuristic_initial_timestamp)
+    # println("\n======> Start Heuristic solution")
+    # execution_stats.heuristic_initial_timestamp = now()
+    # println("=> Start timestamp : ", execution_stats.heuristic_initial_timestamp)
 
     # local heuristic_solution = ils(auxiliars, cw_solution, Int(round(length(instance.deliveries)*0.2, RoundDown)))
-    local heuristic_solution = ils(auxiliars, cw_solution, deepcopy(instance.deliveries))
-    execution_stats.heuristic_completion_timestamp = now()
-    println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, heuristic_solution)), " routes")
-    println("=> Compl. timestamp: ", execution_stats.heuristic_completion_timestamp)
+    # local heuristic_solution = ils(auxiliars, cw_solution, deepcopy(instance.deliveries))
+    # execution_stats.heuristic_completion_timestamp = now()
+    # println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, heuristic_solution)), " routes")
+    # println("=> Compl. timestamp: ", execution_stats.heuristic_completion_timestamp)
+
+    # Slotted version solver Solution
+    println("\n======> Start Slotted solver solution")
+    execution_stats.solver_initial_timestamp = now()
+    println("=> Start timestamp : ", execution_stats.solver_initial_timestamp)
+
+    local solver_solution = solve(instance, auxiliars)
+    execution_stats.solver_completion_timestamp = now()
+    println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, solver_solution)), " routes")
+    println("=> Compl. timestamp: ", execution_stats.solver_completion_timestamp)
 
     # Generate Output
     # generateOutput(greedy_solution)
     # generateOutput(heuristic_solution)
 
     println("\n======> Results (Distance in KM)")
-    println("Greedy   : ", sum(map(x -> x.distance, greedy_solution)) / 1000)
-    println("Heuristic: ", sum(map(x -> x.distance, heuristic_solution)) / 1000)
+    # println("Greedy   : ", sum(map(x -> x.distance, greedy_solution)) / 1000)
+    # println("Heuristic: ", sum(map(x -> x.distance, heuristic_solution)) / 1000)
+    println("Solved: ", sum(map(x -> x.distance, solver_solution)) / 1000)
     println()
     
     # Verify
-    println("\n\n======> Verifying Initial Solution <======")
-    verify(instance=instance, auxiliar=auxiliars, solution=cw_solution)
-    println("\n\n======> Verifying Heuristic Solution <======")
-    verify(instance=instance, auxiliar=auxiliars, solution=heuristic_solution)
+    # println("\n\n======> Verifying Initial Solution <======")
+    # verify(instance=instance, auxiliar=auxiliars, solution=cw_solution)
+    # println("\n\n======> Verifying Heuristic Solution <======")
+    # verify(instance=instance, auxiliar=auxiliars, solution=heuristic_solution)
+    println("\n\n======> Verifying Solver Solution <======")
+    verify(instance=instance, auxiliar=auxiliars, solution=solver_solution)
     
 end
 
-function plotRoute(routes)
 
-    foreach(r -> begin
-        local points = map(x->(x.point.lng, x.point.lat), r.deliveries)
-        plot!(points)
-    end, routes)
-    savefig("myplot.png")
+"""
+Apply initial algorithm and then a heuristic method in order to solve DCVRP.
+**Algorithms:**
+* `Clarke-Wright` - Initial Algorithm
+* `Iterated Local-Search (ILS)` - Heuristic Algorithm (improvement phase)
+"""
+function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route, 1}}=nothing)
+
+    global SLOT_COUNTER += 1
+    local current_slot = SLOT_COUNTER * SLOT_LENGTH
+
+    if (current_slot >= INSTANCE_LENGTH)
+        current_slot = INSTANCE_LENGTH
+        global LAST_SLOT = true
+    end
+
+    local deliveries = instance.deliveries[1 : current_slot]
+
+    if (solution !== nothing)
+        solution = clarkeWrightSolution(instance, auxiliar, deliveries, solution=solution)
+        # solution = ils(auxiliar, solution, deliveries)
+        
+    else
+        solution = clarkeWrightSolution(instance, auxiliar, deliveries)
+        # solution = ils(auxiliar, solution, deliveries)
+    end
+
+    # fixAssignment!(solution, deliveries)
+    
+    if (LAST_SLOT)
+        return solution
+    end
+
+    return solve(instance, auxiliar; solution=solution)
 
 end
 
