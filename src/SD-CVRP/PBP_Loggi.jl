@@ -173,11 +173,11 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
 
     if (solution !== nothing)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution=solution)
-        # solution = ils(auxiliar, solution, deliveries)
+        solution = ils(auxiliar, solution, deliveries)
         
     else
         solution = clarkeWrightSolution(instance, auxiliar, deliveries)
-        # solution = ils(auxiliar, solution, deliveries)
+        solution = ils(auxiliar, solution, deliveries)
     end
 
     fixAssignment!(solution, deliveries)

@@ -3,6 +3,8 @@ using CVRP_Controllers: getDistance, pushDelivery!, deleteDelivery!,
                         getBestInsertionPosition, getClosestRoute,
                         getStringSize, getStringDistance, getInsertionDistance
 
+DEBUG = 0
+
 """
     - This neighbor considers that, for a route of type {depot -> d1 -> d2 ... -> dk -> depot}
     - if dn, where n <= k, is the first one not fixed to the route, then dn+1...dk are also not fixed.
@@ -101,21 +103,24 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
 
     # Update some statistics regarding the move execution
     swap.hasMove = false
+    swap.first_route = nothing
+    swap.second_route = nothing
 
     # Selecting routes
     swap.first_route = rand(routes)
     swap.second_route = rand(routes)
     
     if (swap.first_route.index == swap.second_route.index)
-        while (swap.first_route.index == swap.second_route.index &&
-              (length(swap.first_route.deliveries) - 2 < swap.swap_size
-              || length(swap.second_route.deliveries) - 2 < swap.swap_size))
+        while (swap.first_route.index == swap.second_route.index ||
+              length(swap.first_route.deliveries) - 2 < swap.swap_size ||
+              length(swap.second_route.deliveries) - 2 < swap.swap_size)
 
             swap.first_route = rand(routes)
             swap.second_route = rand(routes)
         
         end
     end
+
     
     # As both routes are different routes and both have swap_size deliveries, chose random string to swap
     local r1_size   = length(swap.first_route.deliveries)
@@ -143,8 +148,8 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     swap.first_string  = swap.first_route.deliveries[swap.r1_starts_at:swap.r1_ends_at]
     swap.second_string = swap.second_route.deliveries[swap.r2_starts_at:swap.r2_ends_at]
 
-    if (swap.first_route.free + getStringSize(swap.first_string) - getStringSize(swap.second_string) < 0
-        || swap.second_route.free + getStringSize(swap.second_string) - getStringSize(swap.first_string) < 0)
+    if (swap.first_route.free + getStringSize(swap.first_string) - getStringSize(swap.second_string) < 0 ||
+        swap.second_route.free + getStringSize(swap.second_string) - getStringSize(swap.first_string) < 0)
         
         swap.hasMove = false
         return typemax(Int64)
@@ -160,6 +165,7 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     swap.hasMove = true
     swap.total += 1
 
+    global DEBUG += 1
     # Calculate delta value
     return (swap.move_distance1 + swap.move_distance2) - (swap.original_distance1 + swap.original_distance2)
     
@@ -167,12 +173,55 @@ end
 
 export accept
 function accept(cvrp_aux::CvrpAuxiliars, swap::Swap)
+
+    try
+        # println("Before accepting move")
+        # println("# First  route #")
+        # println("    - Index: $(swap.first_route.index)")
+        # println("    - # Del: $(length(swap.first_route.deliveries))")
+        # println("    - Start: $(swap.r1_starts_at)")
+        # println("    - Ends : $(swap.r1_ends_at)")
         
-    # Swap deliveries between the selected routes
-    deleteDelivery!(cvrp_aux, swap.first_route, swap.r1_starts_at, swap.r1_ends_at)
-    deleteDelivery!(cvrp_aux, swap.second_route, swap.r2_starts_at, swap.r2_ends_at)
-    pushDelivery!(cvrp_aux, swap.first_route, swap.second_string, swap.r1_starts_at)
-    pushDelivery!(cvrp_aux, swap.second_route, swap.first_string, swap.r2_starts_at)
+        # println("\n# Second route #")
+        # println("    - Index: $(swap.second_route.index)")
+        # println("    - # Del: $(length(swap.second_route.deliveries))")
+        # println("    - Start: $(swap.r2_starts_at)")
+        # println("    - Ends : $(swap.r2_ends_at)")
+        
+        # Swap deliveries between the selected routes
+        deleteDelivery!(cvrp_aux, swap.first_route, swap.r1_starts_at, swap.r1_ends_at)
+        deleteDelivery!(cvrp_aux, swap.second_route, swap.r2_starts_at, swap.r2_ends_at)
+        pushDelivery!(cvrp_aux, swap.first_route, swap.second_string, swap.r1_starts_at)
+        pushDelivery!(cvrp_aux, swap.second_route, swap.first_string, swap.r2_starts_at)
+        
+        # println("After  accepting move")
+        # println("# First  route #")
+        # println("    - Index: $(swap.first_route.index)")
+        # println("    - # Del: $(length(swap.first_route.deliveries))")
+        # println("    - Start: $(swap.r1_starts_at)")
+        # println("    - Ends : $(swap.r1_ends_at)")
+
+        # println("\n# Second route #")
+        # println("    - Index: $(swap.second_route.index)")
+        # println("    - # Del: $(length(swap.second_route.deliveries))")
+        # println("    - Start: $(swap.r2_starts_at)")
+        # println("    - Ends : $(swap.r2_ends_at)")
+        
+    catch
+        println("Error after $DEBUG move execution\n")
+        println("# First  route #")
+        println("    - Index: $(swap.first_route.index)")
+        println("    - # Del: $(length(swap.first_route.deliveries))")
+        println("    - Start: $(swap.r1_starts_at)")
+        println("    - Ends : $(swap.r1_ends_at)")
+
+        println("\n# Second route #")
+        println("    - Index: $(swap.second_route.index)")
+        println("    - # Del: $(length(swap.second_route.deliveries))")
+        println("    - Start: $(swap.r2_starts_at)")
+        println("    - Ends : $(swap.r2_ends_at)")
+        exit()
+    end
 
     # Update move execution statistics
     swap.accept += 1
