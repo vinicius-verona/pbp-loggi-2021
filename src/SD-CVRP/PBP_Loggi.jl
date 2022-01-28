@@ -11,6 +11,8 @@ using Heuristic_Solution: ils
 using Verifier
 
 # Global variables used to controll solver
+# SLOT_LENGTH     = 1037
+# SLOT_LENGTH     = 100
 SLOT_LENGTH     = 100
 SLOT_COUNTER    = 0
 LAST_SLOT       = false
@@ -146,6 +148,25 @@ function cvrp(arguments::Argument)
     # verify(instance=instance, auxiliar=auxiliars, solution=heuristic_solution)
     println("\n\n======> Verifying Solver Solution <======")
     verify(auxiliar=auxiliars, solution=solver_solution)
+    println()
+    
+    local deliveries = reduce((acc, r)->begin
+        return cat(acc, filter!(d -> !occursin(lowercase(d.id), "depot"), r.deliveries), dims=1)
+    end, solver_solution; init=[])
+
+    println(length(deliveries))
+
+    sort!(deliveries, by = x->x.index)
+
+    # for i in deliveries
+    #     println(i.id, " - ", i.index, " - ", i.route_index, " - ", i.visiting_index, " - ", i.fixed)
+    # end
+    # for r in solver_solution
+    #     for i in r.deliveries
+    #         println(i.id, " - ", i.index, " - ", i.route_index, " - ", i.visiting_index, " - ", i.fixed)
+    #     end
+    # end
+    # println("Length of fixed deliveries: ", length(filter!(d -> d.fixed, instance.deliveries)))
     
 end
 

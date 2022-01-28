@@ -151,13 +151,18 @@ Insert a route on index `idx` from `routes`.
 @inline function insertRoute!(route::Route, idx::Int64, routes::Array{Route,1})
 
     insert!(routes, idx, route)
-
+    
     for i = idx:length(routes)
         routes[i].index = i
-
+        
         for j in routes[i].deliveries
             j.route_index = i
         end
+    end
+    
+    route.index = idx
+    for i in route.deliveries
+        i.route_index = idx
     end
 
 end
@@ -398,6 +403,8 @@ For a given delivery, find the closest route which has enough space to have `del
 """
 @inline function getClosestRoute(cvrp_auxiliar::CvrpAuxiliars, deliveries::Array{Delivery, 1}, routes::Array{Route, 1}, delivery::Delivery)
 
+    local response = typemax(Int64)
+
     foreach(d -> begin
         for tuple in d
 
@@ -408,6 +415,7 @@ For a given delivery, find the closest route which has enough space to have `del
             local dlvr = deliveries[tuple.second]
             if (dlvr.route_index !== 0 && routes[dlvr.route_index].free - delivery.size >= 0)
                 if (dlvr.route_index !== delivery.route_index)
+                    response = dlvr.route_index 
                     return dlvr.route_index
                 end
             end
@@ -415,7 +423,7 @@ For a given delivery, find the closest route which has enough space to have `del
         end
     end, cvrp_auxiliar.k_adjacent)
 
-    return typemax(Int64)
+    return response
 
 end
 

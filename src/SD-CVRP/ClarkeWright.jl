@@ -44,6 +44,15 @@ function clarkeWrightSolution(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars,
             insertPair!(:New, instance, cvrp_auxiliars, p, routes)
         end
 
+        temp  = []
+        for r in sort(routes, by = x->x.index)
+            if r.index in temp
+                throw("Double route with the same index $(r.index)")
+            else
+                push!(temp, r.index)
+            end
+        end
+
     end
 
     return routes
@@ -102,6 +111,18 @@ See: [Clarke-Wright Algorithm](https://web.mit.edu/urban_or_book/www/book/chapte
 """
 function concatRoutes!(cvrp_aux::CvrpAuxiliars, first_route::Route, second_route::Route, pair::Savings, routes::Array{Route, 1})
 
+    
+    # local temp = []
+    # for r in routes
+    #     for i in r.deliveries
+    #         if i.index in temp && i.index !== 0
+    #             @warn "1 - Double delivery $(i)"
+    #         else
+    #             push!(temp, i.index)
+    #         end
+    #     end
+    # end
+
     #= 
        This concatanation route+route can only happen if both deliveries 
        in the pair belongs to different routes and are adjacent to the depot.
@@ -124,6 +145,11 @@ function concatRoutes!(cvrp_aux::CvrpAuxiliars, first_route::Route, second_route
         return
     end
 
+    if (length(filter(d -> d.fixed, first_route.deliveries)) > 0 &&
+        length(filter(d -> d.fixed, second_route.deliveries)) > 0)
+        return
+    end
+
     local r1r2 = getInsertionDistance(cvrp_aux, first_route, end_position1, second_route.deliveries[start_position2:end_position2])
     local r2r1 = getInsertionDistance(cvrp_aux, second_route, end_position2, first_route.deliveries[start_position1:end_position1])
     local route_index = -1 
@@ -136,25 +162,59 @@ function concatRoutes!(cvrp_aux::CvrpAuxiliars, first_route::Route, second_route
 
     if (r1r2 <= r2r1)
         # Insert r2 string to r1
+        println("Before push: ", length(routes))
         pushDelivery!(cvrp_aux, first_route, second_route.deliveries[start_position2:end_position2])
         deleteRoute!(second_route.index, routes)
-
+        println("After push : ", length(routes))
+        
         if (route_index === second_route.index)
             local idx = first_route.index
+            println("Before insert: ", length(routes))
             insertRoute!(first_route, route_index, routes)
             deleteRoute!(idx, routes)
+            println("After insert : ", length(routes))
         end
+        println("+++++++++++++++\n")
     else
         # Insert r1 string to r2
+        println("Before push: ", length(routes))
         pushDelivery!(cvrp_aux, second_route, first_route.deliveries[start_position1:end_position1])
         deleteRoute!(first_route.index, routes)
-
+        println("After push : ", length(routes))
+        
         if (route_index === first_route.index)
             local idx = second_route.index
+            println("Before insert: ", length(routes))
             insertRoute!(second_route, route_index, routes)
             deleteRoute!(idx, routes)
+            println("After insert : ", length(routes))
         end
+        println("===============\n")
     end
+
+    # temp  = []
+    # rtemp = []
+    # for r in sort(routes, by = x->x.index)
+    #     for i in r.deliveries
+    #         if i.index in temp && i.index !== 0
+    #             local position = findfirst(x -> x == i.index, temp)
+    #             # throw("2 - Double delivery $(i) - Actual route: $(r.index) - Found at: $(temp[i.index].second.index)")
+    #             throw("2 - Double delivery $(i) - Actual route: $(r.index) - Found at: $(rtemp[position].index)")
+    #         elseif i.index !== 0
+    #             push!(temp, i.index)
+    #             push!(rtemp, r)
+    #         end
+    #     end
+    # end
+
+    # temp  = []
+    # for r in sort(routes, by = x->x.index)
+    #     if r.index in temp
+    #         throw("Double route with the same index $(r.index)")
+    #     else
+    #         push!(temp, r.index)
+    #     end
+    # end
 
 end
 
@@ -184,7 +244,7 @@ function concatRoutes!(cvrp_aux::CvrpAuxiliars, route::Route, delivery::Delivery
     end
 
     local dij = getInsertionDistance(cvrp_aux, route, delivery_in_route.visiting_index, [delivery])
-    local dji = getInsertionDistance(cvrp_aux, route, delivery_in_route.visiting_index, [delivery])
+    local dji = getInsertionDistance(cvrp_aux, route, delivery_in_route.visiting_index + 1, [delivery])
 
     if (dij <= dji)
         pushDelivery!(cvrp_aux, route, delivery, delivery_in_route.visiting_index)
@@ -209,6 +269,8 @@ function getPairs(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, deliveries:
     for i = 1:size
         for j = 1:size
             if (i !== j)
+                if (deliveries[i].fixed && deliveries[j].fixed) continue end
+
                 local di = getDistance(cvrp_auxiliars, depot, deliveries[i])
                 local dj = getDistance(cvrp_auxiliars, depot, deliveries[j])
                 local ij = getDistance(cvrp_auxiliars, deliveries[i], deliveries[j])

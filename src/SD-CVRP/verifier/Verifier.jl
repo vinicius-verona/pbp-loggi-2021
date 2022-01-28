@@ -57,16 +57,20 @@ Cases of failure:
 """
 function verifyRouteStructure(solution::Array{Route, 1})::Bool
 
+    local response = true
+
     foreach(route -> begin
         if (!occursin(lowercase(route.deliveries[begin].id), "depot"))
-            return false
+            response = false
+            return response
         end
         if (!occursin(lowercase(route.deliveries[end].id), "depot"))
-            return false
+            response = false
+            return response
         end
     end, solution)
 
-    return true
+    return response
 
 end
 
@@ -75,6 +79,7 @@ Verify if every delivery appears only once in the solution.
 """
 function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
 
+    local response = true
     local matrix = deepcopy(auxiliar.distance_matrix)
 
     # In the distance matrix, set the primary diagonal to zero
@@ -91,12 +96,13 @@ function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 
             matrix[idx, idx] -= 1
 
             if (matrix[idx, idx] < -1)
-                return false
+                response = false
+                return response
             end
         end
     end, solution)
 
-    return true
+    return response
 
 end
 
@@ -105,6 +111,7 @@ Verify if every delivery appears in the solution.
 """
 function verifyLackAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
 
+    local response = true
     local matrix = deepcopy(auxiliar.distance_matrix)
 
     # In the distance matrix, set the primary diagonal to zero
@@ -124,11 +131,12 @@ function verifyLackAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 1}
     # If at any time, a matrix element (in the main diagonal) is = 0, there is an error
     for i = 2 : matrix_size
         if (matrix[i,i] === 0)
-            return false
+            response = false
+            return response
         end
     end
 
-    return true
+    return response
 
 end
 
@@ -137,6 +145,7 @@ Verify if sum of delivery sizes per route does not exceed capacity.
 """
 function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
 
+    local response = true
     foreach(route -> begin
         local size = 0
         for i in route.deliveries
@@ -144,11 +153,12 @@ function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Boo
         end
 
         if (size > route.capacity)
-            return false
+            response = false
+            return response
         end
     end, solution)
 
-    return true
+    return response
 
 end
 
@@ -160,13 +170,16 @@ Cases of failure:
 """
 function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
     
+    local response = true
+
     foreach(route -> begin
         if (abs(route.distance - getStringDistance(auxiliar, route.deliveries)) > 0.00001)
-            return false
+            response = false
+            return response
         end
     end, solution)
 
-    return true
+    return response
 
 end
 
