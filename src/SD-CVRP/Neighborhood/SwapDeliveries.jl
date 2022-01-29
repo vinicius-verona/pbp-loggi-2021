@@ -121,12 +121,11 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
         end
     end
 
-    
     # As both routes are different routes and both have swap_size deliveries, chose random string to swap
     local r1_size   = length(swap.first_route.deliveries)
     local r2_size   = length(swap.second_route.deliveries)
-    local unfixedR1 = findfirst(x -> x.fixed == false, swap.first_route.deliveries) 
-    local unfixedR2 = findfirst(x -> x.fixed == false, swap.second_route.deliveries) 
+    local unfixedR1 = findfirst(x -> x.fixed == false && x.index !== 0, swap.first_route.deliveries) 
+    local unfixedR2 = findfirst(x -> x.fixed == false && x.index !== 0, swap.second_route.deliveries) 
 
     if (unfixedR1 + swap.swap_size > r1_size - 1 || unfixedR2 + swap.swap_size > r2_size - 1)
         swap.hasMove = false
@@ -147,6 +146,14 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     # Store selected string
     swap.first_string  = swap.first_route.deliveries[swap.r1_starts_at:swap.r1_ends_at]
     swap.second_string = swap.second_route.deliveries[swap.r2_starts_at:swap.r2_ends_at]
+
+
+    if (findall(x->x.index == 0, swap.first_string) !== nothing)
+        throw("Error on first_string, got depot in string")
+    end
+    if (findall(x->x.index == 0, swap.second_string) !== nothing)
+        throw("Error on second_string, got depot in string")
+    end
 
     if (swap.first_route.free + getStringSize(swap.first_string) - getStringSize(swap.second_string) < 0 ||
         swap.second_route.free + getStringSize(swap.second_string) - getStringSize(swap.first_string) < 0)

@@ -534,11 +534,20 @@ In this context, deliveries must be the one to be synced to destiny.
     for i = 1:size
         if (isassigned(destiny, i))
             copyRoute!(source[i], deliveries, destiny[i])
+            if (destiny[i].deliveries[1].index != 0 && source[i].deliveries[1].index != 0)
+                throw("ERROR HERE 1")
+            end
         else
             local route = Route(i, Array{Delivery,1}(undef, length(source[i].deliveries)), 0.0, source[i].depot)
             copyRoute!(source[i], deliveries, route)
             push!(destiny, route)
+            if (route.deliveries[1].index != 0)
+                throw("ERROR HERE 2")
+            end
         end
+        # if (destiny[end].deliveries[1].index != 0)
+            # throw("ERROR HERE")
+        # end
     end
 
 end

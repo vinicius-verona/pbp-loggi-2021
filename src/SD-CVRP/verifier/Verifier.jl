@@ -73,12 +73,12 @@ function verifyRouteStructure(solution::Array{Route, 1})::Tuple{Bool,String}
     foreach(route -> begin
         if (!occursin(route.deliveries[begin].id, "DEPOT") || route.deliveries[begin].index !== 0)
             response = false
-            error = "First delivery is not a depot - ID($(route.deliveries[1].id))"
+            error = "First delivery is not a depot - ID($(route.deliveries[1].id)) - Depot positions: $(findall(x->x.index == 0, route.deliveries))"
             return response, error
         end
         if (!occursin(route.deliveries[end].id, "DEPOT") || route.deliveries[end].index !== 0)
             response = false
-            error = "Last delivery is not a depot - ID($(route.deliveries[end].id))"
+            error = "Last delivery is not a depot - ID($(route.deliveries[end].id) - Depot positions: $(findall(x->x.index == 0, route.deliveries))"
             return response, error
         end
     end, solution)
