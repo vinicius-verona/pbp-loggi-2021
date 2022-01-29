@@ -4,7 +4,7 @@ push!(LOAD_PATH, "$(@__DIR__)/../")
 using Dates
 using CVRP_Structures
 using Load_Instance
-using CVRP_Controllers: getStringDistance
+using CVRP_Controllers: getStringDistance, getDistance
 
 export verify
 function verify(;auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
@@ -16,6 +16,7 @@ function verify(;auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
     else
         println("\t-> Status: [FAILED]")
         println("\t-> Error : $error")
+        exit()
     end
     
     println("======> Start verifying lack of delivery assignment")
@@ -25,6 +26,7 @@ function verify(;auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
     else
         println("\t-> Status: [FAILED]")
         println("\t-> Error : $error")
+        exit()
     end
     
     println("======> Start verifying double  delivery assignment")
@@ -34,6 +36,7 @@ function verify(;auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
     else
         println("\t-> Status: [FAILED]")
         println("\t-> Error : $error")
+        exit()
     end
     
     println("======> Start verifying sum  of delivery sizes")
@@ -43,6 +46,7 @@ function verify(;auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
     else
         println("\t-> Status: [FAILED]")
         println("\t-> Error : $error")
+        exit()
     end
     
     println("======> Start verifying sum  of delivery distances")
@@ -52,6 +56,7 @@ function verify(;auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
     else
         println("\t-> Status: [FAILED]")
         println("\t-> Error : $error")
+        exit()
     end
 
     println()
@@ -70,7 +75,7 @@ function verifyRouteStructure(solution::Array{Route, 1})::Tuple{Bool,String}
     local response = true
     local error = ""
 
-    foreach(route -> begin
+    for route in solution
         if (!occursin(route.deliveries[begin].id, "DEPOT") || route.deliveries[begin].index !== 0)
             response = false
             error = "First delivery is not a depot - ID($(route.deliveries[1].id)) - Depot positions: $(findall(x->x.index == 0, route.deliveries))"
@@ -81,7 +86,7 @@ function verifyRouteStructure(solution::Array{Route, 1})::Tuple{Bool,String}
             error = "Last delivery is not a depot - ID($(route.deliveries[end].id) - Depot positions: $(findall(x->x.index == 0, route.deliveries))"
             return response, error
         end
-    end, solution)
+    end
 
     return response, error
 
@@ -104,7 +109,7 @@ function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 
 
     # For every delivery, takeaway 1 from distance matrix in the due primary diagonal
     # If at any time, a matrix element (in the main diagonal) is < -1, there is an error
-    foreach(route -> begin
+    for route in solution
         for i in route.deliveries[begin + 1 : end - 1]
             local idx = i.index
             matrix[idx, idx] -= 1
@@ -115,7 +120,7 @@ function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 
                 return response, error
             end
         end
-    end, solution)
+    end
 
     return response, error
 
@@ -165,7 +170,7 @@ function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Tup
     local response = true
     local error = ""
 
-    foreach(route -> begin
+    for route in solution
         local size = 0
         for i in route.deliveries
             size += i.size
@@ -176,7 +181,7 @@ function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Tup
             error = "Size exceed capacity - Route $(route.index) | Size($size) | Capacity($(route.capacity))"
             return response, error
         end
-    end, solution)
+    end
 
     return response, error
 
@@ -193,13 +198,22 @@ function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::
     local response = true
     local error = ""
 
-    foreach(route -> begin
+    for route in solution
         if (abs(route.distance - getStringDistance(auxiliar, route.deliveries)) > 0.00001)
             response = false
-            error = "Different Distance: Route($(route.distance)) | String($(getStringDistance(auxiliar, route.deliveries)))"
+            error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(auxiliar, route.deliveries) / 1000) KM)"
+            
+            local sum = 0
+            for i = 1:length(route.deliveries)-1
+                sum += getDistance(auxiliar, route.deliveries[i], route.deliveries[i+1])
+                println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(auxiliar, route.deliveries[i], route.deliveries[i+1]))")
+            end
+
+            println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+            println()
             return response, error
         end
-    end, solution)
+    end
 
     return response, error
 

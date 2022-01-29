@@ -1,10 +1,10 @@
 module Heuristic_Solution
 
 using CVRP_Structures: CvrpData, CvrpAuxiliars, Route, Delivery, Controller
-using CVRP_Controllers: copyRoute!
-
+using CVRP_Controllers: copyRoute!, getStringDistance, getDistance
 using Neighborhood
 using Dates
+using Random
 
 export IlsController
 mutable struct IlsController
@@ -33,12 +33,17 @@ mutable struct RnaController
 
 end
 
+INITIAL_TIMESTAMP = 0
+DEBUG = 0
+
 #-----------------------------#
 #          Algorithm          #
 #-----------------------------#
 
 export ils
 function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries::Array{Delivery, 1}; ils_controller::Controller{IlsController} = nothing, rna_controller::Controller{RnaController} = nothing)
+
+    Random.seed!(1)
 
     local editable_deliveries = deepcopy(slot_deliveries)
     local editable_solution = deepcopy(solution)
@@ -54,6 +59,7 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     # local shift_3  = Shift(3)
     # local shift_4  = Shift(4)
 
+    # local moves::Array{Neighbor, 1} = [swap_1x1]
     local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
     # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
                                     #    shift_1, shift_2, shift_3, shift_4]
@@ -71,7 +77,7 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     
     if (rna_controller === nothing)
         # rna_controller = RnaController(1, 1, length(slot), 0, length(slot), length(slot))
-        rna_controller = RnaController(1, 1, length(slot_deliveries), 0, length(slot_deliveries), length(slot_deliveries))
+        rna_controller = RnaController(1, 1, Int(round(length(slot_deliveries) / 3, RoundDown)), 0, length(slot_deliveries), length(slot_deliveries))
     end
 
     if (ils_controller.slot_deliveries === nothing)
@@ -84,28 +90,39 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     linkCopy!(editable_deliveries, editable_solution)
     
     ils_controller.initial_timestamp = Dates.now()
+
+    global INITIAL_TIMESTAMP = Dates.now()
     while true
         
-        while (rna_controller.perturbance <= rna_controller.perturb_max)
+        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e5) ? break : nothing
+        
+        for i = 1:rna_controller.perturbance
             Dates.now() - ils_controller.initial_timestamp > Millisecond(9e5) ? break : nothing
             
             local move = rand(ils_controller.moves)
             local cost = execute(cvrp_aux, move, editable_solution, ils_controller.editable_deliveries)
-            # println("Perturb cost: ", cost)
-            
+            println(cost)
             if (move.hasMove)
                 accept(cvrp_aux, move)
             end
             
             ils_controller.edited_solution += cost
-            rna_controller.perturbance += 1
         end
+        
+        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e5) ? break : nothing
 
-        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e3) ? break : nothing
-
+        println("Antes : ", ils_controller.edited_solution)
         rna(cvrp_aux, editable_solution, ils_controller, rna_controller)
+        println("Depois: ", ils_controller.edited_solution)
+        println()
+        
+        if DEBUG == 10
+            exit()
+        end
+        global DEBUG += 1
 
         if (ils_controller.edited_solution <= ils_controller.best_solution)
+            println("###")
             # Update controller.best_solution and solution
             copyRoute!(editable_solution, ils_controller.slot_deliveries, solution)
             ils_controller.best_solution = ils_controller.edited_solution
@@ -139,18 +156,39 @@ function rna(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, ils_controller:
     while i < rna_controller.rna_max
 
         i += 1
+
+        Dates.now() - INITIAL_TIMESTAMP > Millisecond(9e5) ? break : nothing
+
         local move = rand(ils_controller.moves)
         local cost = execute(cvrp_aux, move, solution, ils_controller.editable_deliveries)
-        # println("RNA cost: ", cost)
 
         if (cost <= 0)
-            # println("cost <= 0")
+            # println("Iter $i has cost < 0. Cost: ", cost)
             accept(cvrp_aux, move)
+            
+            #DEBUG
+            for route in solution
+                if (abs(route.distance - getStringDistance(cvrp_aux, route.deliveries)) > 0.00001)
+                    error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                    
+                    println(move.id)
+                    local sum = 0
+                    for i = 1:length(route.deliveries)-1
+                        sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+                        println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+                    end
+                    
+                    println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+                    println()
+                    throw(error)
+                end
+            end
+            #END DEBUG
+            
             ils_controller.edited_solution += cost
             
             if (cost < 0)
-                # println("cost < 0")
-                i = 0
+                i = 1
             end
         
         else
@@ -159,6 +197,10 @@ function rna(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, ils_controller:
             end
         end
 
+    end
+
+    if (ils_controller.edited_solution < ils_controller.best_solution)
+        println("##### EXIT RNA #### - COST = $(ils_controller.edited_solution) - BEST COST = $(ils_controller.best_solution)")
     end
 
 end

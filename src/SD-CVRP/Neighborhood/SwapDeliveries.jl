@@ -148,11 +148,11 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     swap.second_string = swap.second_route.deliveries[swap.r2_starts_at:swap.r2_ends_at]
 
 
-    if (findall(x->x.index == 0, swap.first_string) !== nothing)
-        throw("Error on first_string, got depot in string")
+    if (length(findall(x->x.index == 0, swap.first_string)) !== 0)
+        throw("Error on first_string, got depot in string position $(findall(x->x.index == 0, swap.first_string))")
     end
-    if (findall(x->x.index == 0, swap.second_string) !== nothing)
-        throw("Error on second_string, got depot in string")
+    if (length(findall(x->x.index == 0, swap.second_string)) !== 0)
+        throw("Error on second_string, got depot in string position $(findall(x->x.index == 0, swap.second_string))")
     end
 
     if (swap.first_route.free + getStringSize(swap.first_string) - getStringSize(swap.second_string) < 0 ||
@@ -181,7 +181,6 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     swap.hasMove = true
     swap.total += 1
 
-    global DEBUG += 1
     # Calculate delta value
     return (swap.move_distance1 + swap.move_distance2) - (swap.original_distance1 + swap.original_distance2)
     
@@ -189,7 +188,8 @@ end
 
 export accept
 function accept(cvrp_aux::CvrpAuxiliars, swap::Swap)
-
+    
+    global DEBUG += 1
     try
         # println("Before accepting move")
         # println("# First  route #")
@@ -204,11 +204,115 @@ function accept(cvrp_aux::CvrpAuxiliars, swap::Swap)
         # println("    - Start: $(swap.r2_starts_at)")
         # println("    - Ends : $(swap.r2_ends_at)")
         
+        
+        #DEBUG
+        for route in [swap.first_route, swap.second_route]
+            if (abs(route.distance - getStringDistance(cvrp_aux, route.deliveries)) > 0.00001)
+                println(swap.id)
+                println("BEFORE")
+                error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                
+                local sum = 0
+                for i = 1:length(route.deliveries)-1
+                    sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+                    println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+                end
+                
+                println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+                println()
+                throw(error)
+            end
+        end
+        #END DEBUG
+        
         # Swap deliveries between the selected routes
         deleteDelivery!(cvrp_aux, swap.first_route, swap.r1_starts_at, swap.r1_ends_at)
+
+        #DEBUG
+        for route in [swap.first_route]
+            if (abs(route.distance - getStringDistance(cvrp_aux, route.deliveries)) > 0.00001)
+                error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                
+                println(swap.id)
+                println("During 1")
+                local sum = 0
+                for i = 1:length(route.deliveries)-1
+                    sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+                    println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+                end
+                
+                println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+                println()
+                throw(error)
+            end
+        end
+        #END DEBUG
+        
         deleteDelivery!(cvrp_aux, swap.second_route, swap.r2_starts_at, swap.r2_ends_at)
+        
+        #DEBUG
+        for route in [swap.second_route]
+            if (abs(route.distance - getStringDistance(cvrp_aux, route.deliveries)) > 0.00001)
+                error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                
+                println(swap.id)
+                println("During 2")
+                local sum = 0
+                for i = 1:length(route.deliveries)-1
+                    sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+                    println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+                end
+                
+                println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+                println()
+                throw(error)
+            end
+        end
+        #END DEBUG
+        
         pushDelivery!(cvrp_aux, swap.first_route, swap.second_string, swap.r1_starts_at)
+        
+        #DEBUG
+        for route in [swap.first_route]
+            if (abs(route.distance - getStringDistance(cvrp_aux, route.deliveries)) > 0.00001)
+                error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                
+                println(swap.id)
+                println("During 3")
+                local sum = 0
+                for i = 1:length(route.deliveries)-1
+                    sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+                    println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+                end
+                
+                println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+                println()
+                throw(error)
+            end
+        end
+        #END DEBUG
+
         pushDelivery!(cvrp_aux, swap.second_route, swap.first_string, swap.r2_starts_at)
+
+        #DEBUG
+        for route in [swap.first_route, swap.second_route]
+            if (abs(route.distance - getStringDistance(cvrp_aux, route.deliveries)) > 0.00001)
+                error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                
+                println(swap.id)
+                println("AFTER")
+                local sum = 0
+                for i = 1:length(route.deliveries)-1
+                    sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+                    println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+                end
+                
+                println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+                println()
+                throw(error)
+            end
+        end
+        #END DEBUG
         
         # println("After  accepting move")
         # println("# First  route #")

@@ -124,12 +124,14 @@ Remove the selected string of deliveries from `route`. The string starts at `idx
         @warn "Removing fixed deliveries from route."
     end
 
-    route.free += getStringSize(route.deliveries[idx:limit])
-
+    
     if (isassigned(route.deliveries, idx - 1) && isassigned(route.deliveries, limit + 1))
         route.distance += getDistance(cvrp_aux, route.deliveries[idx - 1], route.deliveries[limit + 1])
+        route.distance -= getDistance(cvrp_aux, route.deliveries[idx - 1], route.deliveries[idx])
+        route.distance -= getDistance(cvrp_aux, route.deliveries[limit], route.deliveries[limit + 1])
     end
     
+    route.free += getStringSize(route.deliveries[idx:limit])
     route.distance -= getStringDistance(cvrp_aux, route.deliveries[idx:limit])
     deleteat!(route.deliveries, idx:limit)
 
@@ -138,6 +140,22 @@ Remove the selected string of deliveries from `route`. The string starts at `idx
     for i in route.deliveries
         i.visiting_index = counter
         counter += 1
+    end
+
+    for route in [route]
+        if (abs(route.distance - getStringDistance(cvrp_aux, route.deliveries)) > 0.00001)
+            error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+            
+            local sum = 0
+            for i = 1:length(route.deliveries)-1
+                sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+                println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+            end
+            
+            println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+            println()
+            throw(error)
+        end
     end
 
 end
@@ -405,7 +423,7 @@ For a given delivery, find the closest route which has enough space to have `del
 
     local response = typemax(Int64)
 
-    foreach(d -> begin
+    for d in cvrp_auxiliar.k_adjacent
         for tuple in d
 
             if (!isassigned(deliveries, tuple.second))
@@ -421,7 +439,7 @@ For a given delivery, find the closest route which has enough space to have `del
             end
 
         end
-    end, cvrp_auxiliar.k_adjacent)
+    end
 
     return response
 
