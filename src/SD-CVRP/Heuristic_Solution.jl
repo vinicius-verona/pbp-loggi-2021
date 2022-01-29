@@ -91,15 +91,17 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
             
             local move = rand(ils_controller.moves)
             local cost = execute(cvrp_aux, move, editable_solution, ils_controller.editable_deliveries)
+            # println("Perturb cost: ", cost)
             
             if (move.hasMove)
                 accept(cvrp_aux, move)
             end
             
             ils_controller.edited_solution += cost
+            rna_controller.perturbance += 1
         end
 
-        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e5) ? break : nothing
+        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e3) ? break : nothing
 
         rna(cvrp_aux, editable_solution, ils_controller, rna_controller)
 
@@ -139,12 +141,15 @@ function rna(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, ils_controller:
         i += 1
         local move = rand(ils_controller.moves)
         local cost = execute(cvrp_aux, move, solution, ils_controller.editable_deliveries)
+        # println("RNA cost: ", cost)
 
         if (cost <= 0)
+            # println("cost <= 0")
             accept(cvrp_aux, move)
             ils_controller.edited_solution += cost
             
             if (cost < 0)
+                # println("cost < 0")
                 i = 0
             end
         

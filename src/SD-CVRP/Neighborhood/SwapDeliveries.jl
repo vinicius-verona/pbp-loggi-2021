@@ -151,6 +151,15 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     if (swap.first_route.free + getStringSize(swap.first_string) - getStringSize(swap.second_string) < 0 ||
         swap.second_route.free + getStringSize(swap.second_string) - getStringSize(swap.first_string) < 0)
         
+        # println("Free 1: $(swap.first_route.free)")
+        # println("Free 2: $(swap.second_route.free)")
+        # println("Size 1: $(getStringSize(swap.first_string))")
+        # println("Size 2: $(getStringSize(swap.second_string))")
+        # println()
+        # # println(swap.first_string)
+        # # println(swap.second_string)
+        # exit()
+
         swap.hasMove = false
         return typemax(Int64)
     end

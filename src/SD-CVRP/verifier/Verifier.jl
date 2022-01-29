@@ -10,38 +10,48 @@ export verify
 function verify(;auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
 
     println("======> Start verifying if every route starts and end in depot")
-    if (verifyRouteStructure(solution))
+    local passed, error = verifyRouteStructure(solution)
+    if (passed)
         println("\t-> Status: [PASSED]")
     else
         println("\t-> Status: [FAILED]")
+        println("\t-> Error : $error")
     end
     
     println("======> Start verifying lack of delivery assignment")
-    if (verifyLackAssignment(auxiliar, solution))
+    passed, error = verifyLackAssignment(auxiliar, solution)
+    if (passed)
         println("\t-> Status: [PASSED]")
     else
         println("\t-> Status: [FAILED]")
+        println("\t-> Error : $error")
     end
     
     println("======> Start verifying double  delivery assignment")
-    if (verifyDoubleAssignment(auxiliar, solution))
+    passed, error = verifyDoubleAssignment(auxiliar, solution)
+    if (passed)
         println("\t-> Status: [PASSED]")
     else
         println("\t-> Status: [FAILED]")
+        println("\t-> Error : $error")
     end
     
     println("======> Start verifying sum  of delivery sizes")
-    if (verifySumSizes(auxiliar, solution))
+    passed, error = verifySumSizes(auxiliar, solution)
+    if (passed)
         println("\t-> Status: [PASSED]")
     else
         println("\t-> Status: [FAILED]")
+        println("\t-> Error : $error")
     end
     
     println("======> Start verifying sum  of delivery distances")
-    if (verifySumDistance(auxiliar, solution))
+    passed, error = verifySumDistance(auxiliar, solution)
+    if (passed)
         println("\t-> Status: [PASSED]")
     else
         println("\t-> Status: [FAILED]")
+        println("\t-> Error : $error")
     end
 
     println()
@@ -55,31 +65,35 @@ Cases of failure:
    - if depot is in the middle of a route
    - if depot there is only one depot in the route
 """
-function verifyRouteStructure(solution::Array{Route, 1})::Bool
+function verifyRouteStructure(solution::Array{Route, 1})::Tuple{Bool,String}
 
     local response = true
+    local error = ""
 
     foreach(route -> begin
-        if (!occursin(lowercase(route.deliveries[begin].id), "depot"))
+        if (!occursin(route.deliveries[begin].id, "DEPOT") || route.deliveries[begin].index !== 0)
             response = false
-            return response
+            error = "First delivery is not a depot - ID($(route.deliveries[1].id))"
+            return response, error
         end
-        if (!occursin(lowercase(route.deliveries[end].id), "depot"))
+        if (!occursin(route.deliveries[end].id, "DEPOT") || route.deliveries[end].index !== 0)
             response = false
-            return response
+            error = "Last delivery is not a depot - ID($(route.deliveries[end].id))"
+            return response, error
         end
     end, solution)
 
-    return response
+    return response, error
 
 end
 
 """
 Verify if every delivery appears only once in the solution.
 """
-function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
+function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Tuple{Bool,String}
 
     local response = true
+    local error = ""
     local matrix = deepcopy(auxiliar.distance_matrix)
 
     # In the distance matrix, set the primary diagonal to zero
@@ -97,21 +111,23 @@ function verifyDoubleAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 
 
             if (matrix[idx, idx] < -1)
                 response = false
-                return response
+                error = "Double delivery assignment - ID($(i.id))"
+                return response, error
             end
         end
     end, solution)
 
-    return response
+    return response, error
 
 end
 
 """
 Verify if every delivery appears in the solution.
 """
-function verifyLackAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
+function verifyLackAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Tuple{Bool,String}
 
     local response = true
+    local error = ""
     local matrix = deepcopy(auxiliar.distance_matrix)
 
     # In the distance matrix, set the primary diagonal to zero
@@ -132,20 +148,23 @@ function verifyLackAssignment(auxiliar::CvrpAuxiliars, solution::Array{Route, 1}
     for i = 2 : matrix_size
         if (matrix[i,i] === 0)
             response = false
-            return response
+            error = "Delivery not found - IDX($(i))"
+            return response, error
         end
     end
 
-    return response
+    return response, error
 
 end
 
 """
 Verify if sum of delivery sizes per route does not exceed capacity.
 """
-function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
+function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Tuple{Bool,String}
 
     local response = true
+    local error = ""
+
     foreach(route -> begin
         local size = 0
         for i in route.deliveries
@@ -154,11 +173,12 @@ function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Boo
 
         if (size > route.capacity)
             response = false
-            return response
+            error = "Size exceed capacity - Route $(route.index) | Size($size) | Capacity($(route.capacity))"
+            return response, error
         end
     end, solution)
 
-    return response
+    return response, error
 
 end
 
@@ -168,18 +188,20 @@ Verify if the sum of route distances matches the sum of route actual driven path
 Cases of failure: 
   - if current route distance field does not match the actual driven distance by the route
 """
-function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Bool
+function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Tuple{Bool,String}
     
     local response = true
+    local error = ""
 
     foreach(route -> begin
         if (abs(route.distance - getStringDistance(auxiliar, route.deliveries)) > 0.00001)
             response = false
-            return response
+            error = "Different Distance: Route($(route.distance)) | String($(getStringDistance(auxiliar, route.deliveries)))"
+            return response, error
         end
     end, solution)
 
-    return response
+    return response, error
 
 end
 

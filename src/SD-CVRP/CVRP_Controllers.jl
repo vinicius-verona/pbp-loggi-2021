@@ -222,7 +222,7 @@ function getStringSize(string::Array{Delivery, 1})
     local value = 0
     local idx   = 0
         
-    for idx = 1 : length(string) - 1
+    for idx = 1 : length(string)
         value += string[idx].size
     end
 
@@ -561,31 +561,50 @@ In this context, deliveries must be the one to be synced to destiny.
     destiny.free     = source.free
     destiny.centroid = source.centroid
 
-    for i = 2:size - 1
+    for i = 1:size
         local idx = source.deliveries[i].index
         if (isassigned(destiny.deliveries, i))
-            destiny.deliveries[i] = deliveries[idx]
+            if (idx != 0)
+                destiny.deliveries[i] = deliveries[idx]
+            else
+                destiny.deliveries[i] = copyDelivery(source.deliveries[i])
+            end
         else
-            push!(destiny.deliveries, deliveries[idx])
+            if (idx != 0)
+                insert!(destiny.deliveries, i, deliveries[idx])
+            else
+                insert!(destiny.deliveries, i, copyDelivery(source.deliveries[i]))
+            end
         end
 
-        deliveries[idx].visiting_index = i
-        deliveries[idx].route_index = destiny.index
+        destiny.deliveries[i].visiting_index = source.deliveries[i].visiting_index
+        destiny.deliveries[i].route_index = destiny.index
+        
+        if (idx !== 0)
+            deliveries[idx].visiting_index = i
+            deliveries[idx].route_index = destiny.index
+        end
     end
 
-    if (length(destiny.deliveries) - 1 > length)
-        while (isassigned(destiny.deliveries, length + 1))
-            deleteat!(destiny.deliveries, length + 1)
+    if (size < length(destiny.deliveries))
+        while (isassigned(destiny.deliveries, size + 1) == true)
+            deleteat!(destiny.deliveries, size + 1)
         end
-
-    elseif (length(destiny.deliveries) < length)
+        
+    elseif (size > length(destiny.deliveries))
         push!(destiny.deliveries, copyDelivery(source.deliveries[1]))
     end
 
-    destiny.deliveries[length].visiting_index = length
+    destiny.deliveries[size].visiting_index = size
 
-    if (length(destiny.deliveries) !== length || destiny.deliveries[1].id != source.deliveries[1].id || destiny.deliveries[end].id != source.deliveries[end].id)
-        throw("Error on copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)")
+    if (length(destiny.deliveries) !== size)
+        throw("Length error on copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)\n Lengths: $(length(destiny.deliveries)) - $(size)")
+    end
+    if (destiny.deliveries[1].id != source.deliveries[1].id)
+        throw("Initial delivery error on copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)\nIDs: $(destiny.deliveries[1].id) - $(source.deliveries[1].id)")
+    end
+    if (destiny.deliveries[end].id != source.deliveries[end].id)
+        throw("Last delivery error on copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)\nIDs: $(destiny.deliveries[end].id) - $(source.deliveries[end].id)")
     end
 
 end
