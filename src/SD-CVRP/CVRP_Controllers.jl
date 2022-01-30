@@ -78,13 +78,13 @@ Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it 
     end
 
     for route in [route]
-        if (abs(route.distance - getStringDistance(cvrp_aux, route.deliveries)) > 0.00001)
+        if (abs(route.distance/1000 - getStringDistance(cvrp_aux, route.deliveries)/1000) > 1e-5)
             error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
             
             println(error)
             local sum = 0
             for i = 1:length(route.deliveries)-1
-                sum += getDistance(auxiliar, route.deliveries[i], route.deliveries[i+1])
+                sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
                 println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
             end
 
@@ -160,7 +160,7 @@ Remove the selected string of deliveries from `route`. The string starts at `idx
     end
 
     for route in [route]
-        if (abs(route.distance - getStringDistance(cvrp_aux, route.deliveries)) > 0.00001)
+        if (abs(route.distance/1000 - getStringDistance(cvrp_aux, route.deliveries)/1000) > 1e-5)
             error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
             
             local sum = 0
@@ -442,11 +442,13 @@ For a given delivery, find the closest route which has enough space to have `del
 
     for d in cvrp_auxiliar.k_adjacent
         for tuple in d
-
+            
             if (!isassigned(deliveries, tuple.second))
                 continue
             end
-        
+            
+            # println(tuple, " - ", deliveries[tuple.second])
+
             local dlvr = deliveries[tuple.second]
             if (dlvr.route_index !== 0 && routes[dlvr.route_index].free - delivery.size >= 0)
                 if (dlvr.route_index !== delivery.route_index)
@@ -481,7 +483,7 @@ For a given delivery and route, find the best position to insert the delivery in
 
         if (local_distance < distance)
             distance = local_distance
-            position = i
+            position = i + 1
         end
     end
 

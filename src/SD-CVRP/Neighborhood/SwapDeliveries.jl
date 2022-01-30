@@ -172,9 +172,12 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     end
 
     # Calculate move value
-    swap.move_distance1 = swap.original_distance1 - getStringDistance(cvrp_aux, swap.first_string)
+    swap.move_distance1 = swap.original_distance1 - getStringDistance(cvrp_aux, swap.first_string) + 
+                          getDistance(cvrp_aux, swap.first_route.deliveries[swap.r1_starts_at - 1], swap.first_route.deliveries[swap.r1_ends_at + 1])
     swap.move_distance1 += getInsertionDistance(cvrp_aux, swap.first_route, swap.r1_starts_at, swap.swap_size, swap.second_string)
-    swap.move_distance2 = swap.original_distance2 - getStringDistance(cvrp_aux, swap.second_string)
+    
+    swap.move_distance2 = swap.original_distance2 - getStringDistance(cvrp_aux, swap.second_string) +
+                          getDistance(cvrp_aux, swap.second_route.deliveries[swap.r2_starts_at - 1], swap.second_route.deliveries[swap.r2_ends_at + 1])
     swap.move_distance2 += getInsertionDistance(cvrp_aux, swap.second_route, swap.r2_starts_at, swap.swap_size, swap.first_string)
 
     # Update some statistics regarding the move execution
@@ -187,7 +190,7 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
 end
 
 export accept
-function accept(cvrp_aux::CvrpAuxiliars, swap::Swap)
+function accept(cvrp_aux::CvrpAuxiliars, swap::Swap, _::Array{Route, 1})
     
     global DEBUG += 1
     try

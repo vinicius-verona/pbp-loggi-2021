@@ -199,7 +199,7 @@ function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::
     local error = ""
 
     for route in solution
-        if (abs(route.distance - getStringDistance(auxiliar, route.deliveries)) > 0.00001)
+        if (abs(route.distance / 1000 - getStringDistance(auxiliar, route.deliveries) / 1000) > 1e-5)
             response = false
             error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(auxiliar, route.deliveries) / 1000) KM)"
             

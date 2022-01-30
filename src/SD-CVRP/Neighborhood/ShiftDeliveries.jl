@@ -45,16 +45,9 @@ mutable struct Shift <: Neighbor
     total::Int64
 
     Shift(size::Int64 = 1; id="Shift-default") = begin
-        # local id = "Shift-default"
         local hasMove    = false
         local shift_size = 1
 
-        # isdefined(attributes,  1) ? id = attributes[1] : nothing
-        # isdefined(attributes,  2) ? begin
-        #     shift_size = attributes[2]
-        #     id === "Shift-default" ? id = "Shift-$shift_size" : nothing
-        # end : nothing
-        
         shift_size = size
         id === "Shift-default" ? id = "Shift-$shift_size" : nothing
 
@@ -101,12 +94,17 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
 
     # Chose random string to shift
     local route_size    = length(shift.route.deliveries)
-    local unfixed_route = findfirst(x -> x.fixed == false, shift.route.deliveries) 
+    local unfixed_route = findfirst(x -> x.fixed == false && x.index !== 0, shift.route.deliveries) 
 
-    if (unfixed_route + shift.shift_size > route_size - 1)
+    if (unfixed_route + shift.shift_size - 1 > route_size - 1)
         shift.hasMove = false
         return typemax(Int64)
     end
+    
+    shift.removal_starts_at = unfixed_route
+    shift.removal_ends_at = unfixed_route + shift.shift_size - 1
+
+    shift.string  = shift.route.deliveries[shift.removal_starts_at:shift.removal_ends_at]
 
     # Select closest routes and insertion positions
     # For each insertion position detected, shift delivery
@@ -120,17 +118,22 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
         local route_index = getClosestRoute(cvrp_aux, deliveries, routes, delivery)
         if (route_index === typemax(Int64))
             shift.hasMove = false;
-            return typemax(Int64)
         end
         
         shift.routes[i] = routes[route_index]
         original_routes_distance += shift.routes[i].distance
-        shift.insertion_routes_index[i] = route_index
+        shift.insert_routes_index[i] = route_index
         
         local insertion_position = getBestInsertionPosition(cvrp_aux, shift.routes[i], delivery)
         if (insertion_position === typemax(Int64))
-            shift.hasMove = false;
-            return typemax(Int64)
+            
+            if (i > 1)
+                shift.hasMove = false
+                return typemax(Int64)
+            else
+                shift.hasMove = true
+                return typemax(Int64)
+            end
         end
         
         shift.predecessors[i] = shift.routes[i].deliveries[insertion_position - 1]
@@ -155,14 +158,22 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
 end
 
 export accept
-accept(_::CvrpAuxiliars, shift::Shift) = shift.accept += 1
+function accept(_::CvrpAuxiliars, shift::Shift, solution::Array{Route, 1})
+    shift.accept += 1
+
+    if (length(shift.route.deliveries) <= 2)
+        deleteRoute!(shift.route.index, solution)
+    end
+end
 
 export reject
 function reject(cvrp_aux::CvrpAuxiliars, shift::Shift)
 
     for i = 1:shift.shift_size
-        deleteDelivery!(cvrp_aux, shift.routes[i], shift.string[i].visiting_index, shift.string[i].visiting_index)
-        pushDelivery!(cvrp_aux, shift.route, shift.string[i], shift.removal_starts_at + i - 1)
+        if (shift.string[i].route_index !== shift.route.index)
+            deleteDelivery!(cvrp_aux, shift.routes[i], shift.string[i].visiting_index, shift.string[i].visiting_index)
+            pushDelivery!(cvrp_aux, shift.route, shift.string[i], shift.removal_starts_at + i - 1)
+        end
     end
 
     # Update move execution statistics
