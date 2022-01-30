@@ -446,8 +446,6 @@ For a given delivery, find the closest route which has enough space to have `del
             if (!isassigned(deliveries, tuple.second))
                 continue
             end
-            
-            # println(tuple, " - ", deliveries[tuple.second])
 
             local dlvr = deliveries[tuple.second]
             if (dlvr.route_index !== 0 && routes[dlvr.route_index].free - delivery.size >= 0)
@@ -571,20 +569,11 @@ In this context, deliveries must be the one to be synced to destiny.
     for i = 1:size
         if (isassigned(destiny, i))
             copyRoute!(source[i], deliveries, destiny[i])
-            if (destiny[i].deliveries[1].index != 0 && source[i].deliveries[1].index != 0)
-                throw("ERROR HERE 1")
-            end
         else
             local route = Route(i, Array{Delivery,1}(undef, length(source[i].deliveries)), 0.0, source[i].depot)
             copyRoute!(source[i], deliveries, route)
             push!(destiny, route)
-            if (route.deliveries[1].index != 0)
-                throw("ERROR HERE 2")
-            end
         end
-        # if (destiny[end].deliveries[1].index != 0)
-            # throw("ERROR HERE")
-        # end
     end
 
 end
@@ -606,21 +595,43 @@ In this context, deliveries must be the one to be synced to destiny.
     destiny.capacity = source.capacity
     destiny.free     = source.free
     destiny.centroid = source.centroid
+    destiny.deliveries = Array{Delivery, 1}(undef, size)
+
+    # for i = 1:size
+    #     local idx = source.deliveries[i].index
+
+    #     if (isassigned(destiny.deliveries, i))
+    #         if (idx != 0)
+    #             destiny.deliveries[i] = deliveries[idx]
+    #         else
+    #             println("! - $(i)")
+    #             copyDelivery!(source.deliveries[i], destiny.deliveries[i])
+    #         end
+    #     else
+    #         if (idx != 0)
+    #             insert!(destiny.deliveries, i, deliveries[idx])
+    #         else
+    #             println("# - $(i)")
+    #             insert!(destiny.deliveries, i, copyDelivery(source.deliveries[i]))
+    #         end
+    #     end
+
+    #     destiny.deliveries[i].visiting_index = source.deliveries[i].visiting_index
+    #     destiny.deliveries[i].route_index = destiny.index
+        
+    #     if (idx !== 0)
+    #         deliveries[idx].visiting_index = i
+    #         deliveries[idx].route_index = destiny.index
+    #     end
+    # end
 
     for i = 1:size
         local idx = source.deliveries[i].index
-        if (isassigned(destiny.deliveries, i))
-            if (idx != 0)
-                destiny.deliveries[i] = deliveries[idx]
-            else
-                copyDelivery!(source.deliveries[i], destiny.deliveries[i])
-            end
+
+        if (idx != 0)
+            destiny.deliveries[i] = deliveries[idx]
         else
-            if (idx != 0)
-                insert!(destiny.deliveries, i, deliveries[idx])
-            else
-                insert!(destiny.deliveries, i, copyDelivery(source.deliveries[i]))
-            end
+            destiny.deliveries[i] = copyDelivery(source.deliveries[i])
         end
 
         destiny.deliveries[i].visiting_index = source.deliveries[i].visiting_index
@@ -631,19 +642,46 @@ In this context, deliveries must be the one to be synced to destiny.
             deliveries[idx].route_index = destiny.index
         end
     end
-
-    if (size < length(destiny.deliveries))
-        while (isassigned(destiny.deliveries, size + 1) == true)
-            deleteat!(destiny.deliveries, size + 1)
-        end
+    
         
-    elseif (size == length(destiny.deliveries) + 1)
-        push!(destiny.deliveries, copyDelivery(source.deliveries[1]))
-    elseif  (size > length(destiny.deliveries))
-        throw("Error! Different sizes.")
-    end
+        #DEUBG#
+        # println("==================")
+        # println("SIZE: $(size)")
+        # println("SIZE DESTINY: $(length(destiny.deliveries))")
+        # if (length(findall(x->x.id == "DEPOT" || x.index == 0, source.deliveries)) > 2)
+        #     throw("Depot found in string at $(findall(x->x.id == "DEPOT" || x.index == 0, source.deliveries))")
+        # end
+    
+        # for i in destiny.deliveries
+        #     println("VISITING_IDX: $(i.visiting_index) - IDX: $(i.index) - ID: $(i.id)")
+        # end
+        #DEUBG END#
+        
+    # if (size < length(destiny.deliveries))
+    #     while (isassigned(destiny.deliveries, size + 1) == true)
+    #         deleteat!(destiny.deliveries, size + 1)
+    #     end
+    # end
+    
+    
+        #DEUBG#
+        # println("")
+        # for i in destiny.deliveries
+        #     println("VISITING_IDX: $(i.visiting_index) - IDX: $(i.index) - ID: $(i.id)")
+        # end
+        # println("\nSOURCE")
+        # for i in source.deliveries
+        #     println("VISITING_IDX: $(i.visiting_index) - IDX: $(i.index) - ID: $(i.id)")
+        # end
+        # println("==================")
+        #DEUBG END#
+    # elseif (size == length(destiny.deliveries) + 1)
+    #     push!(destiny.deliveries, copyDelivery(source.deliveries[end]))
+    # elseif  (size > length(destiny.deliveries))
+    #     throw("Error! Different sizes.")
+    # end
 
-    destiny.deliveries[size].visiting_index = size
+    # destiny.deliveries[size].visiting_index = size
 
     if (length(destiny.deliveries) !== size)
         throw("Length error on copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)\n Lengths: $(length(destiny.deliveries)) - $(size)")

@@ -1,7 +1,8 @@
 using CVRP_Structures: CvrpData, CvrpAuxiliars, Route, Delivery
 using CVRP_Controllers: getDistance, pushDelivery!, deleteDelivery!,
                         getBestInsertionPosition, getClosestRoute,
-                        getStringSize, getStringDistance, getInsertionDistance
+                        getStringSize, getStringDistance, getInsertionDistance,
+                        deleteRoute!
 
 """
     - This neighbor considers that, for a route of type {depot -> d1 -> d2 ... -> dk -> depot}
@@ -106,18 +107,24 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
 
     shift.string  = shift.route.deliveries[shift.removal_starts_at:shift.removal_ends_at]
 
+    if (length(findall(x->x.id == "DEPOT" || x.index == 0, shift.string)) > 0)
+        throw("Depot found in string at $(length(findall(x->x.id == "DEPOT" || x.index == 0, shift.string)))")
+    end
+
     # Select closest routes and insertion positions
     # For each insertion position detected, shift delivery
     local original_routes_distance = 0
     local move_routes_distance     = 0
     
+    local route_indexes = []
     for i = 1:shift.shift_size
 
         local delivery = shift.string[i]
 
         local route_index = getClosestRoute(cvrp_aux, deliveries, routes, delivery)
         if (route_index === typemax(Int64))
-            shift.hasMove = false;
+            shift.hasMove = false
+            return typemax(Int64)
         end
         
         shift.routes[i] = routes[route_index]
@@ -139,12 +146,18 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
         shift.predecessors[i] = shift.routes[i].deliveries[insertion_position - 1]
         shift.insertion_positions[i] = insertion_position
 
+        if (route_index in route_indexes)
+            move_routes_distance -= shift.routes[i].distance # If the route has already been summed, remove value before sum
+        else
+            push!(route_indexes, route_index)
+        end
+
         deleteDelivery!(cvrp_aux, shift.route, delivery.visiting_index, delivery.visiting_index)
         pushDelivery!(cvrp_aux, shift.routes[i], delivery, insertion_position)
-        move_routes_distance += shift.routes[i].distance
-
+        move_routes_distance += shift.routes[i].distance # If the route has already been summed, remove value before sum
+        
     end
-
+    
     # Update removal route distance
     shift.move_distance = shift.route.distance
 
@@ -159,11 +172,24 @@ end
 
 export accept
 function accept(_::CvrpAuxiliars, shift::Shift, solution::Array{Route, 1})
+    
     shift.accept += 1
 
     if (length(shift.route.deliveries) <= 2)
         deleteRoute!(shift.route.index, solution)
     end
+    
+    if (length(findall(x->x.id == "DEPOT" || x.index == 0, shift.string)) > 0)
+        throw("Depot found in string at $(findall(x->x.id == "DEPOT" || x.index == 0, shift.string))")
+    end
+
+    for i in shift.routes
+        if (length(findall(x->x.id == "DEPOT" || x.index == 0, i.deliveries[2:end-1])) > 0)
+            throw("Depot found in route $(i.index) at $(findall(x->x.id == "DEPOT" || x.index == 0, i.deliveries[2:end-1]))")
+        end
+    end
+
+
 end
 
 export reject
@@ -175,6 +201,11 @@ function reject(cvrp_aux::CvrpAuxiliars, shift::Shift)
             pushDelivery!(cvrp_aux, shift.route, shift.string[i], shift.removal_starts_at + i - 1)
         end
     end
+    
+    if (length(findall(x->x.id == "DEPOT" || x.index == 0, shift.string)) > 0)
+        throw("Depot found in string at $(findall(x->x.id == "DEPOT" || x.index == 0, shift.string))")
+    end
+
 
     # Update move execution statistics
     shift.reject += 1

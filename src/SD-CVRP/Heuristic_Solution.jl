@@ -61,9 +61,9 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
 
     # local moves::Array{Neighbor, 1} = [swap_2x2]
     # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
-    # local moves::Array{Neighbor, 1} = [shift_1, shift_2, shift_3, shift_4]
-    local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
-                                       shift_1, shift_2, shift_3, shift_4]
+    local moves::Array{Neighbor, 1} = [shift_1, shift_2, shift_3, shift_4]
+    # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
+                                    #    shift_1, shift_2, shift_3, shift_4]
 
     if (ils_controller === nothing)
         if (slot_deliveries === nothing)
@@ -124,7 +124,6 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
             #     less = true
             # end
             
-            
             # Update controller.best_solution and solution
             copyRoute!(editable_solution, ils_controller.slot_deliveries, solution)
             ils_controller.best_solution = ils_controller.edited_solution
@@ -146,6 +145,7 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
                         sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
                         println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
                     end
+                    println()
                     
                     println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
                     println()
