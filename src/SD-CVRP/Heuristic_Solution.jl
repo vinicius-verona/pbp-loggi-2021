@@ -54,13 +54,13 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     local swap_3x3 = Swap(3)
     local swap_4x4 = Swap(4)
     
-    # local shift_1  = Shift(1)
-    # local shift_2  = Shift(2)
-    # local shift_3  = Shift(3)
-    # local shift_4  = Shift(4)
+    local shift_1  = Shift(1)
+    local shift_2  = Shift(2)
+    local shift_3  = Shift(3)
+    local shift_4  = Shift(4)
 
-    # local moves::Array{Neighbor, 1} = [swap_1x1]
-    local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
+    local moves::Array{Neighbor, 1} = [swap_2x2]
+    # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
     # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
                                     #    shift_1, shift_2, shift_3, shift_4]
 
@@ -77,7 +77,7 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     
     if (rna_controller === nothing)
         # rna_controller = RnaController(1, 1, length(slot), 0, length(slot), length(slot))
-        rna_controller = RnaController(1, 1, Int(round(length(slot_deliveries) / 3, RoundDown)), 0, length(slot_deliveries), length(slot_deliveries))
+        rna_controller = RnaController(1, 1, Int(round(length(slot_deliveries) / 3, RoundDown)), 0, Int(round(length(slot_deliveries) / 3, RoundDown)), Int(round(length(slot_deliveries) / 3, RoundDown)))
     end
 
     if (ils_controller.slot_deliveries === nothing)
@@ -94,39 +94,65 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     global INITIAL_TIMESTAMP = Dates.now()
     while true
         
-        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e5) ? break : nothing
+        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e4) ? break : nothing
         
-        # for i = 1:rna_controller.perturbance
-        #     Dates.now() - ils_controller.initial_timestamp > Millisecond(9e5) ? break : nothing
+        for i = 1:rna_controller.perturbance
+            Dates.now() - ils_controller.initial_timestamp > Millisecond(9e4) ? break : nothing
             
-        #     local move = rand(ils_controller.moves)
-        #     local cost = execute(cvrp_aux, move, editable_solution, ils_controller.editable_deliveries)
-        #     if (move.hasMove)
-        #         accept(cvrp_aux, move)
-        #         ils_controller.edited_solution += cost
-        #     end
+            local move = rand(ils_controller.moves)
+            local cost = execute(cvrp_aux, move, editable_solution, ils_controller.editable_deliveries)
+            if (move.hasMove)
+                # println("Before accept: ", ils_controller.edited_solution)
+                accept(cvrp_aux, move)
+                ils_controller.edited_solution += cost
+                # println("After  accept: ", ils_controller.edited_solution)
+            else
+                i -= 1
+            end
 
-        # end
+        end
         
-        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e5) ? break : nothing
+        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e4) ? break : nothing
 
-        # println("Antes : ", ils_controller.edited_solution)
         rna(cvrp_aux, editable_solution, ils_controller, rna_controller)
-        # println("Depois: ", ils_controller.edited_solution)
-        # println()
-        
-        # if DEBUG == 10
-            # exit()
-        # end
-        # global DEBUG += 1
 
         if (ils_controller.edited_solution <= ils_controller.best_solution)
-            # println("###")
+            local less = false
+            println("Improved from $(ils_controller.best_solution) to $(ils_controller.edited_solution) -> Solution: $(sum(map(x -> x.distance, solution))) - Edited: $(sum(map(x -> x.distance, editable_solution)))")
+            if (ils_controller.edited_solution < ils_controller.best_solution)
+                less = true
+            end
+            
+            
             # Update controller.best_solution and solution
             copyRoute!(editable_solution, ils_controller.slot_deliveries, solution)
             ils_controller.best_solution = ils_controller.edited_solution
             rna_controller.iter = 0
             rna_controller.perturbance = 0
+
+            if (less && ils_controller.edited_solution == ils_controller.best_solution)
+                println("After Improved from $(ils_controller.best_solution) to $(ils_controller.edited_solution) -> Solution: $(sum(map(x -> x.distance, solution))) - Edited: $(sum(map(x -> x.distance, editable_solution)))")
+                exit()
+            end
+
+            #DEBUG
+            for route in solution
+                if (abs(route.distance - getStringDistance(cvrp_aux, route.deliveries)) > 0.00001)
+                    error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                    
+                    println(move.id)
+                    local sum = 0
+                    for i = 1:length(route.deliveries)-1
+                        sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+                        println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+                    end
+                    
+                    println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+                    println()
+                    throw(error)
+                end
+            end
+            #END DEBUG
             
         else
             # Reject edited_solution by updating it to be like best solution
@@ -144,6 +170,17 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
         end
     end
 
+    for i in moves
+        println("ID: $(i.id)")
+        println("accept: $(i.accept)")
+        println("reject: $(i.reject)")
+        println("improvements: $(i.improvements)")
+        println("worsens : $(i.worsens)")
+        println("sideways: $(i.sideways)")
+        println("total: $(i.total)")
+        println()
+    end
+
     return solution
 
 end
@@ -156,7 +193,7 @@ function rna(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, ils_controller:
 
         i += 1
 
-        Dates.now() - INITIAL_TIMESTAMP > Millisecond(9e5) ? break : nothing
+        Dates.now() - INITIAL_TIMESTAMP > Millisecond(9e4) ? break : nothing
 
         local move = rand(ils_controller.moves)
         local cost = execute(cvrp_aux, move, solution, ils_controller.editable_deliveries)
@@ -188,6 +225,12 @@ function rna(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, ils_controller:
             
             if (cost < 0)
                 i = 1
+            end
+            
+            if (ils_controller.edited_solution < ils_controller.best_solution)
+                move.improvements += 1
+            else
+                move.sideways += 1
             end
         
         else

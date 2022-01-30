@@ -55,13 +55,12 @@ Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it 
         pos = length(route.deliveries)
     end
 
-    insert!(route.deliveries, pos, d)
     route.free -= d.size
     d.route_index    = route.index
     d.visiting_index = pos
 
     local previous = isassigned(route.deliveries, pos - 1) ? route.deliveries[pos-1] : nothing; # Previous Delivery
-    local next = isassigned(route.deliveries, pos + 1) ? route.deliveries[pos+1] : nothing; # Next Delivery
+    local next = isassigned(route.deliveries, pos) ? route.deliveries[pos] : nothing; # Next Delivery
     
     previous !== nothing ? route.distance += getDistance(cvrp_aux, previous, d) : nothing
     next !== nothing ? route.distance += getDistance(cvrp_aux, d, next) : nothing
@@ -69,11 +68,30 @@ Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it 
     if (previous !== nothing && next !== nothing) 
         route.distance -= getDistance(cvrp_aux, previous, next)
     end
+    
+    insert!(route.deliveries, pos, d)
 
-    local counter = pos+1
-    for i = pos+1:length(route.deliveries)
+    local counter = pos
+    for i = pos:length(route.deliveries)
         route.deliveries[i].visiting_index = counter
         counter += 1
+    end
+
+    for route in [route]
+        if (abs(route.distance - getStringDistance(cvrp_aux, route.deliveries)) > 0.00001)
+            error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+            
+            println(error)
+            local sum = 0
+            for i = 1:length(route.deliveries)-1
+                sum += getDistance(auxiliar, route.deliveries[i], route.deliveries[i+1])
+                println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+            end
+
+            println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+            println()
+            exit()
+        end
     end
 
 end
@@ -100,7 +118,6 @@ Insert string of delivery into `route` after last position of `route`.
             pushDelivery!(cvrp_aux, route, delivery)
         end, string[start_position:end_position])
     end
-
 
 end
 
@@ -594,7 +611,7 @@ In this context, deliveries must be the one to be synced to destiny.
             if (idx != 0)
                 destiny.deliveries[i] = deliveries[idx]
             else
-                destiny.deliveries[i] = copyDelivery(source.deliveries[i])
+                copyDelivery!(source.deliveries[i], destiny.deliveries[i])
             end
         else
             if (idx != 0)
@@ -618,8 +635,10 @@ In this context, deliveries must be the one to be synced to destiny.
             deleteat!(destiny.deliveries, size + 1)
         end
         
-    elseif (size > length(destiny.deliveries))
+    elseif (size == length(destiny.deliveries) + 1)
         push!(destiny.deliveries, copyDelivery(source.deliveries[1]))
+    elseif  (size > length(destiny.deliveries))
+        throw("Error! Different sizes.")
     end
 
     destiny.deliveries[size].visiting_index = size
