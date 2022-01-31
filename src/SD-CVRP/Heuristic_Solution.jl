@@ -70,7 +70,7 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
             throw("Error! When an ILS controller is not defined, an array of avaliable (editable) deliveries is required.")
         end
         
-        ils_controller = IlsController(Dates.now(), 9e5, solution_cost, solution_cost, solution_cost, moves, editable_deliveries, slot_deliveries)
+        ils_controller = IlsController(Dates.now(), 9e4, solution_cost, solution_cost, solution_cost, moves, editable_deliveries, slot_deliveries)
     
     elseif (ils_controller.moves === nothing)
         ils_controller.moves = moves
@@ -95,13 +95,14 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     global INITIAL_TIMESTAMP = Dates.now()
     while true
         
-        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e5) ? break : nothing
+        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e4) ? break : nothing
         
         for i = 1:rna_controller.perturbance
-            Dates.now() - ils_controller.initial_timestamp > Millisecond(9e5) ? break : nothing
+            Dates.now() - ils_controller.initial_timestamp > Millisecond(9e4) ? break : nothing
             
             local move = rand(ils_controller.moves)
             local cost = execute(cvrp_aux, move, editable_solution, ils_controller.editable_deliveries)
+
             if (move.hasMove)
                 accept(cvrp_aux, move)
                 ils_controller.edited_solution += cost
@@ -111,21 +112,21 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
 
         end
         
-        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e5) ? break : nothing
+        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e4) ? break : nothing
 
         rna(cvrp_aux, editable_solution, ils_controller, rna_controller)
 
         if (ils_controller.edited_solution <= ils_controller.best_solution)
 
             # Update controller.best_solution and solution
-            copyRoute!(editable_solution, ils_controller.slot_deliveries, solution, cvrp_aux)
+            copyRoute!(editable_solution, ils_controller.slot_deliveries, solution)
             ils_controller.best_solution = ils_controller.edited_solution
             rna_controller.iter = 0
             rna_controller.perturbance = 0
 
         else
             # Reject edited_solution by updating it to be like best solution
-            copyRoute!(solution, ils_controller.editable_deliveries, editable_solution, cvrp_aux)
+            copyRoute!(solution, ils_controller.editable_deliveries, editable_solution)
             ils_controller.edited_solution = ils_controller.best_solution
             rna_controller.iter += 1
         end
@@ -162,7 +163,7 @@ function rna(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, ils_controller:
 
         i += 1
 
-        Dates.now() - INITIAL_TIMESTAMP > Millisecond(9e5) ? break : nothing
+        Dates.now() - INITIAL_TIMESTAMP > Millisecond(9e4) ? break : nothing
 
         local move = rand(ils_controller.moves)
         local cost = execute(cvrp_aux, move, solution, ils_controller.editable_deliveries)

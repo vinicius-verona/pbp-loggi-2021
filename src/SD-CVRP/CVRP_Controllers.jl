@@ -529,10 +529,13 @@ export copyRoute!
 For a given set of routes `source`, copy it to `destiny`.
 In this context, deliveries must be the one to be synced to destiny.
 """
-@inline function copyRoute!(source::Array{Route, 1}, deliveries::Array{Delivery, 1}, destiny::Array{Route, 1}, cvrp_aux::CvrpAuxiliars)
+@inline function copyRoute!(source::Array{Route, 1}, deliveries::Array{Delivery, 1}, destiny::Array{Route, 1})
 
     local length_source = length(source)
-    destiny = Array{Route, 1}(undef, 0)
+
+    for i in destiny
+        empty!(i.deliveries)
+    end
 
     for i = 1:length_source
         if (isassigned(destiny, i))
