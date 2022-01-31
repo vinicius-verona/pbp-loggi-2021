@@ -60,10 +60,10 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     local shift_4  = Shift(4)
 
     # local moves::Array{Neighbor, 1} = [swap_2x2]
-    # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
+    local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4, shift_1]
     # local moves::Array{Neighbor, 1} = [shift_1, shift_2, shift_3, shift_4]
-    local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
-                                       shift_1, shift_2, shift_3, shift_4]
+    # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
+                                    #    shift_1, shift_2, shift_3, shift_4]
 
     if (ils_controller === nothing)
         if (slot_deliveries === nothing)
@@ -140,16 +140,16 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
         end
     end
 
-    for i in moves
-        println("ID: $(i.id)")
-        println("accept: $(i.accept)")
-        println("reject: $(i.reject)")
-        println("improvements: $(i.improvements)")
-        println("worsens : $(i.worsens)")
-        println("sideways: $(i.sideways)")
-        println("total: $(i.total)")
-        println()
-    end
+    # for i in moves
+    #     println("ID: $(i.id)")
+    #     println("accept: $(i.accept)")
+    #     println("reject: $(i.reject)")
+    #     println("improvements: $(i.improvements)")
+    #     println("worsens : $(i.worsens)")
+    #     println("sideways: $(i.sideways)")
+    #     println("total: $(i.total)")
+    #     println()
+    # end
 
     return solution
 

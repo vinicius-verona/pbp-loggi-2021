@@ -11,9 +11,9 @@ using Heuristic_Solution: ils
 using Verifier
 
 # Global variables used to controll solver
-SLOT_LENGTH     = 1037
+# SLOT_LENGTH     = 1037
 # SLOT_LENGTH     = 100
-# SLOT_LENGTH     = 100
+SLOT_LENGTH     = 500
 SLOT_COUNTER    = 0
 LAST_SLOT       = false
 INSTANCE_LENGTH = 0
@@ -126,7 +126,7 @@ function cvrp(arguments::Argument)
     execution_stats.solver_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.solver_initial_timestamp)
 
-    local solver_solution = solve(instance, auxiliars; model=model)
+    local solver_solution = solve(instance, auxiliars)
     execution_stats.solver_completion_timestamp = now()
     println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, solver_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.solver_completion_timestamp)
@@ -159,7 +159,7 @@ Apply initial algorithm and then a heuristic method in order to solve DCVRP.
 * `Clarke-Wright` - Initial Algorithm
 * `Iterated Local-Search (ILS)` - Heuristic Algorithm (improvement phase)
 """
-function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route, 1}}=nothing, model::Model)
+function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route, 1}}=nothing)
 
     global SLOT_COUNTER += 1
     local current_slot = SLOT_COUNTER * SLOT_LENGTH
@@ -169,17 +169,14 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
         global LAST_SLOT = true
     end
 
-    # local deliveries = instance.deliveries[1 : current_slot]
+    local deliveries = instance.deliveries[1 : current_slot]
 
     if (solution !== nothing)
-        solution = greedySolution(instance, auxiliar, model)
-        # solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution=solution)
-        # solution = ils(auxiliar, solution, deliveries)
+        solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution=solution)
+        solution = ils(auxiliar, solution, deliveries)
         
     else
-        solution = greedySolution(instance, auxiliar, model)
-        # solution = clarkeWrightSolution(instance, auxiliar, deliveries)
-        local deliveries = instance.deliveries[1 : current_slot]
+        solution = clarkeWrightSolution(instance, auxiliar, deliveries)
         solution = ils(auxiliar, solution, deliveries)
     end
 

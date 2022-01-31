@@ -81,6 +81,12 @@ end
 export execute
 function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1}, deliveries::Array{Delivery, 1}) # Delta evaluation
 
+    # FIXME: When slotted approach is used, a shift might insert a delivery in between 
+    # fixed deliveries. Eventually, when accepted, this new string will select fixed deliveries
+    # to be shifted (note line 100 only look for the first occurrence of fixed = false)
+    # Strategy 1: Block if all delivery in selected string are not fixed=false;
+    # Strategy 2: Select string that might or might not be sequencial.
+
     # Update some statistics regarding the move execution
     shift.hasMove = false
 
@@ -95,7 +101,7 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
     local route_size    = length(shift.route.deliveries)
     local unfixed_route = findfirst(x -> x.fixed == false && x.index !== 0, shift.route.deliveries) 
 
-    if (unfixed_route + shift.shift_size - 1 > route_size - 1)
+    if (unfixed_route === nothing || unfixed_route + shift.shift_size - 1 > route_size - 1)
         shift.hasMove = false
         return typemax(Int64)
     end

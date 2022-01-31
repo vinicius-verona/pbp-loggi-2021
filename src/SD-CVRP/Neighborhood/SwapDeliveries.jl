@@ -106,7 +106,7 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     local unfixedR1 = findfirst(x -> x.fixed == false && x.index !== 0, swap.first_route.deliveries) 
     local unfixedR2 = findfirst(x -> x.fixed == false && x.index !== 0, swap.second_route.deliveries) 
 
-    if (unfixedR1 + swap.swap_size > r1_size - 1 || unfixedR2 + swap.swap_size > r2_size - 1)
+    if (unfixedR1 === nothing || unfixedR2 === nothing || unfixedR1 + swap.swap_size > r1_size - 1 || unfixedR2 + swap.swap_size > r2_size - 1)
         swap.hasMove = false
         return typemax(Int64)
     end
