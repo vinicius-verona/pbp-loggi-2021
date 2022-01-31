@@ -33,15 +33,19 @@ mutable struct RnaController
 
 end
 
-INITIAL_TIMESTAMP = 0
-DEBUG = 0
-
 #-----------------------------#
 #          Algorithm          #
 #-----------------------------#
 
 export ils
-function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries::Array{Delivery, 1}; ils_controller::Controller{IlsController} = nothing, rna_controller::Controller{RnaController} = nothing)
+function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries::Array{Delivery, 1}; ils_controller::Controller{IlsController} = nothing, rna_controller::Controller{RnaController} = nothing, execution_time::Int64 = Int(6e4))
+
+    if (length(solution) == 1)
+        @warn "There is only one route, therefore, as there is no intra-route neighbors (yet), the heuristic will not execute."
+        return solution
+    elseif (length(solution) <= 5)
+        @warn "There are too few routes, there is a chance the neighbors will take too long selecting routes. Consider increasing the number of routes."
+    end
 
     Random.seed!(1)
 
@@ -70,14 +74,13 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
             throw("Error! When an ILS controller is not defined, an array of avaliable (editable) deliveries is required.")
         end
         
-        ils_controller = IlsController(Dates.now(), 9e4, solution_cost, solution_cost, solution_cost, moves, editable_deliveries, slot_deliveries)
+        ils_controller = IlsController(Dates.now(), execution_time, solution_cost, solution_cost, solution_cost, moves, editable_deliveries, slot_deliveries)
     
     elseif (ils_controller.moves === nothing)
         ils_controller.moves = moves
     end
     
     if (rna_controller === nothing)
-        # rna_controller = RnaController(1, 1, length(slot), 0, length(slot), length(slot))
         rna_controller = RnaController(1, 1, Int(round(length(slot_deliveries) / 3, RoundDown)), 0, Int(round(length(slot_deliveries) / 3, RoundDown)), Int(round(length(slot_deliveries) / 3, RoundDown)))
     end
 
@@ -91,20 +94,19 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     linkCopy!(editable_deliveries, editable_solution)
     
     ils_controller.initial_timestamp = Dates.now()
-
-    global INITIAL_TIMESTAMP = Dates.now()
+    
     while true
         
-        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e4) ? break : nothing
+        Dates.now() - ils_controller.initial_timestamp > Millisecond(ils_controller.duration) ? break : nothing
         
         for i = 1:rna_controller.perturbance
-            Dates.now() - ils_controller.initial_timestamp > Millisecond(9e4) ? break : nothing
+            Dates.now() - ils_controller.initial_timestamp > Millisecond(ils_controller.duration) ? break : nothing
             
             local move = rand(ils_controller.moves)
             local cost = execute(cvrp_aux, move, editable_solution, ils_controller.editable_deliveries)
-
+            
             if (move.hasMove)
-                accept(cvrp_aux, move)
+                accept(cvrp_aux, move, editable_solution)
                 ils_controller.edited_solution += cost
             else
                 i -= 1
@@ -112,7 +114,7 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
 
         end
         
-        Dates.now() - ils_controller.initial_timestamp > Millisecond(9e4) ? break : nothing
+        Dates.now() - ils_controller.initial_timestamp > Millisecond(ils_controller.duration) ? break : nothing
 
         rna(cvrp_aux, editable_solution, ils_controller, rna_controller)
 
@@ -140,17 +142,6 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
         end
     end
 
-    # for i in moves
-    #     println("ID: $(i.id)")
-    #     println("accept: $(i.accept)")
-    #     println("reject: $(i.reject)")
-    #     println("improvements: $(i.improvements)")
-    #     println("worsens : $(i.worsens)")
-    #     println("sideways: $(i.sideways)")
-    #     println("total: $(i.total)")
-    #     println()
-    # end
-
     return solution
 
 end
@@ -163,7 +154,7 @@ function rna(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, ils_controller:
 
         i += 1
 
-        Dates.now() - INITIAL_TIMESTAMP > Millisecond(9e4) ? break : nothing
+        Dates.now() - ils_controller.initial_timestamp > Millisecond(ils_controller.duration) ? break : nothing
 
         local move = rand(ils_controller.moves)
         local cost = execute(cvrp_aux, move, solution, ils_controller.editable_deliveries)

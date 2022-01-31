@@ -11,9 +11,7 @@ using Heuristic_Solution: ils
 using Verifier
 
 # Global variables used to controll solver
-# SLOT_LENGTH     = 1037
-# SLOT_LENGTH     = 100
-SLOT_LENGTH     = 500
+SLOT_LENGTH     = 50
 SLOT_COUNTER    = 0
 LAST_SLOT       = false
 INSTANCE_LENGTH = 0
@@ -173,11 +171,15 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
 
     if (solution !== nothing)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution=solution)
-        solution = ils(auxiliar, solution, deliveries)
+        
+        local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+        solution = ils(auxiliar, solution, deliveries; execution_time=time)
         
     else
         solution = clarkeWrightSolution(instance, auxiliar, deliveries)
-        solution = ils(auxiliar, solution, deliveries)
+        
+        local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+        solution = ils(auxiliar, solution, deliveries; execution_time=time)
     end
 
     fixAssignment!(solution, deliveries)
