@@ -81,8 +81,6 @@ end
 export execute
 function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1}, deliveries::Array{Delivery, 1}) # Delta evaluation
 
-    # WARNING: Where is it setting the string?
-     
     # Update some statistics regarding the move execution
     shift.hasMove = false
 
@@ -106,10 +104,6 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
     shift.removal_ends_at = unfixed_route + shift.shift_size - 1
 
     shift.string  = shift.route.deliveries[shift.removal_starts_at:shift.removal_ends_at]
-
-    if (length(findall(x->x.id == "DEPOT" || x.index == 0, shift.string)) > 0)
-        throw("Depot found in string at $(length(findall(x->x.id == "DEPOT" || x.index == 0, shift.string)))")
-    end
 
     # Select closest routes and insertion positions
     # For each insertion position detected, shift delivery
@@ -178,16 +172,6 @@ function accept(_::CvrpAuxiliars, shift::Shift, solution::Array{Route, 1})
     if (length(shift.route.deliveries) <= 2)
         deleteRoute!(shift.route.index, solution)
     end
-    
-    if (length(findall(x->x.id == "DEPOT" || x.index == 0, shift.string)) > 0)
-        throw("Depot found in string at $(findall(x->x.id == "DEPOT" || x.index == 0, shift.string))")
-    end
-
-    for i in shift.routes
-        if (length(findall(x->x.id == "DEPOT" || x.index == 0, i.deliveries[2:end-1])) > 0)
-            throw("Depot found in route $(i.index) at $(findall(x->x.id == "DEPOT" || x.index == 0, i.deliveries[2:end-1]))")
-        end
-    end
 
 
 end
@@ -201,11 +185,6 @@ function reject(cvrp_aux::CvrpAuxiliars, shift::Shift)
             pushDelivery!(cvrp_aux, shift.route, shift.string[i], shift.removal_starts_at + i - 1)
         end
     end
-    
-    if (length(findall(x->x.id == "DEPOT" || x.index == 0, shift.string)) > 0)
-        throw("Depot found in string at $(findall(x->x.id == "DEPOT" || x.index == 0, shift.string))")
-    end
-
 
     # Update move execution statistics
     shift.reject += 1

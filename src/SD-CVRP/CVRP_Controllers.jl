@@ -77,23 +77,6 @@ Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it 
         counter += 1
     end
 
-    for route in [route]
-        if (abs(route.distance/1000 - getStringDistance(cvrp_aux, route.deliveries)/1000) > 1e-5)
-            error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
-            
-            println(error)
-            local sum = 0
-            for i = 1:length(route.deliveries)-1
-                sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
-                println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
-            end
-
-            println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
-            println()
-            exit()
-        end
-    end
-
 end
 
 export pushDelivery!
@@ -157,22 +140,6 @@ Remove the selected string of deliveries from `route`. The string starts at `idx
     for i in route.deliveries
         i.visiting_index = counter
         counter += 1
-    end
-
-    for route in [route]
-        if (abs(route.distance/1000 - getStringDistance(cvrp_aux, route.deliveries)/1000) > 1e-5)
-            error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
-            
-            local sum = 0
-            for i = 1:length(route.deliveries)-1
-                sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
-                println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
-            end
-            
-            println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
-            println()
-            throw(error)
-        end
     end
 
 end
@@ -562,17 +529,18 @@ export copyRoute!
 For a given set of routes `source`, copy it to `destiny`.
 In this context, deliveries must be the one to be synced to destiny.
 """
-@inline function copyRoute!(source::Array{Route, 1}, deliveries::Array{Delivery, 1}, destiny::Array{Route, 1})
+@inline function copyRoute!(source::Array{Route, 1}, deliveries::Array{Delivery, 1}, destiny::Array{Route, 1}, cvrp_aux::CvrpAuxiliars)
 
-    local size = length(source)
+    local length_source = length(source)
+    destiny = Array{Route, 1}(undef, 0)
 
-    for i = 1:size
+    for i = 1:length_source
         if (isassigned(destiny, i))
             copyRoute!(source[i], deliveries, destiny[i])
         else
             local route = Route(i, Array{Delivery,1}(undef, length(source[i].deliveries)), 0.0, source[i].depot)
             copyRoute!(source[i], deliveries, route)
-            push!(destiny, route)
+            insert!(destiny, i, route)
         end
     end
 
@@ -597,34 +565,6 @@ In this context, deliveries must be the one to be synced to destiny.
     destiny.centroid = source.centroid
     destiny.deliveries = Array{Delivery, 1}(undef, size)
 
-    # for i = 1:size
-    #     local idx = source.deliveries[i].index
-
-    #     if (isassigned(destiny.deliveries, i))
-    #         if (idx != 0)
-    #             destiny.deliveries[i] = deliveries[idx]
-    #         else
-    #             println("! - $(i)")
-    #             copyDelivery!(source.deliveries[i], destiny.deliveries[i])
-    #         end
-    #     else
-    #         if (idx != 0)
-    #             insert!(destiny.deliveries, i, deliveries[idx])
-    #         else
-    #             println("# - $(i)")
-    #             insert!(destiny.deliveries, i, copyDelivery(source.deliveries[i]))
-    #         end
-    #     end
-
-    #     destiny.deliveries[i].visiting_index = source.deliveries[i].visiting_index
-    #     destiny.deliveries[i].route_index = destiny.index
-        
-    #     if (idx !== 0)
-    #         deliveries[idx].visiting_index = i
-    #         deliveries[idx].route_index = destiny.index
-    #     end
-    # end
-
     for i = 1:size
         local idx = source.deliveries[i].index
 
@@ -642,46 +582,6 @@ In this context, deliveries must be the one to be synced to destiny.
             deliveries[idx].route_index = destiny.index
         end
     end
-    
-        
-        #DEUBG#
-        # println("==================")
-        # println("SIZE: $(size)")
-        # println("SIZE DESTINY: $(length(destiny.deliveries))")
-        # if (length(findall(x->x.id == "DEPOT" || x.index == 0, source.deliveries)) > 2)
-        #     throw("Depot found in string at $(findall(x->x.id == "DEPOT" || x.index == 0, source.deliveries))")
-        # end
-    
-        # for i in destiny.deliveries
-        #     println("VISITING_IDX: $(i.visiting_index) - IDX: $(i.index) - ID: $(i.id)")
-        # end
-        #DEUBG END#
-        
-    # if (size < length(destiny.deliveries))
-    #     while (isassigned(destiny.deliveries, size + 1) == true)
-    #         deleteat!(destiny.deliveries, size + 1)
-    #     end
-    # end
-    
-    
-        #DEUBG#
-        # println("")
-        # for i in destiny.deliveries
-        #     println("VISITING_IDX: $(i.visiting_index) - IDX: $(i.index) - ID: $(i.id)")
-        # end
-        # println("\nSOURCE")
-        # for i in source.deliveries
-        #     println("VISITING_IDX: $(i.visiting_index) - IDX: $(i.index) - ID: $(i.id)")
-        # end
-        # println("==================")
-        #DEUBG END#
-    # elseif (size == length(destiny.deliveries) + 1)
-    #     push!(destiny.deliveries, copyDelivery(source.deliveries[end]))
-    # elseif  (size > length(destiny.deliveries))
-    #     throw("Error! Different sizes.")
-    # end
-
-    # destiny.deliveries[size].visiting_index = size
 
     if (length(destiny.deliveries) !== size)
         throw("Length error on copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)\n Lengths: $(length(destiny.deliveries)) - $(size)")
