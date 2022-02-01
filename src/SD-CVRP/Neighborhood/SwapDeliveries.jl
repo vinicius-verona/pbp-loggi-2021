@@ -80,6 +80,9 @@ end
 export execute
 function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _) # Delta evaluation
 
+    # WARNING: When Swap is used with shift, the same isnertion problem can occur.
+    # The same strategies can be applied. However, Swap itself is not wrong.
+
     # Update some statistics regarding the move execution
     swap.hasMove = false
     swap.first_route = nothing
@@ -106,16 +109,18 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     local unfixedR1 = findfirst(x -> x.fixed == false && x.index !== 0, swap.first_route.deliveries) 
     local unfixedR2 = findfirst(x -> x.fixed == false && x.index !== 0, swap.second_route.deliveries) 
 
-    if (unfixedR1 === nothing || unfixedR2 === nothing || unfixedR1 + swap.swap_size > r1_size - 1 || unfixedR2 + swap.swap_size > r2_size - 1)
+    if (unfixedR1 === nothing || unfixedR2 === nothing || unfixedR1 + swap.swap_size > r1_size - 1 ||
+        unfixedR2 + swap.swap_size > r2_size - 1)
         swap.hasMove = false
         return typemax(Int64)
     end
 
+    
     swap.r1_starts_at = rand(unfixedR1:r1_size - swap.swap_size - 1)
     swap.r2_starts_at = rand(unfixedR2:r2_size - swap.swap_size - 1)
     swap.r1_ends_at   = swap.r1_starts_at + swap.swap_size - 1
     swap.r2_ends_at   = swap.r2_starts_at + swap.swap_size - 1
-
+    
     # Store original values
     swap.original_size1 = swap.first_route.free
     swap.original_size2 = swap.second_route.free
@@ -125,6 +130,12 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     # Store selected string
     swap.first_string  = swap.first_route.deliveries[swap.r1_starts_at:swap.r1_ends_at]
     swap.second_string = swap.second_route.deliveries[swap.r2_starts_at:swap.r2_ends_at]
+    
+    if (findfirst(x -> x.fixed == true, swap.first_string) !== nothing ||
+        findfirst(x -> x.fixed == true, swap.second_string) !== nothing)
+        swap.hasMove = false
+        return typemax(Int64)
+    end
 
     if (swap.first_route.free + getStringSize(swap.first_string) - getStringSize(swap.second_string) < 0 ||
         swap.second_route.free + getStringSize(swap.second_string) - getStringSize(swap.first_string) < 0)
