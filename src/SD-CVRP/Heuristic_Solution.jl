@@ -61,8 +61,8 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     local shift_3  = Shift(3)
     local shift_4  = Shift(4)
 
-    # local moves::Array{Neighbor, 1} = [shift_2]
-    local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
+    local moves::Array{Neighbor, 1} = [shift_2]
+    # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
     # local moves::Array{Neighbor, 1} = [shift_1, shift_2, shift_3, shift_4]
     # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
                                     #    shift_1, shift_2, shift_3, shift_4]
@@ -117,14 +117,16 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
         rna(cvrp_aux, editable_solution, ils_controller, rna_controller)
 
         if (ils_controller.edited_solution <= ils_controller.best_solution)
-            # println(ils_controller.edited_solution) 
-            # println(ils_controller.best_solution)
-            # println()
+
             # Update controller.best_solution and solution
             copyRoute!(editable_solution, ils_controller.slot_deliveries, solution)
             ils_controller.best_solution = ils_controller.edited_solution
             rna_controller.iter = 0
             rna_controller.perturbance = 0
+
+            # println(ils_controller.edited_solution) 
+            # println(ils_controller.best_solution)
+            # println()
 
         else
             # Reject edited_solution by updating it to be like best solution
@@ -150,6 +152,7 @@ export rna
 function rna(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, ils_controller::IlsController, rna_controller::RnaController)
     
     local i = 1
+    # local count = 0
     while i < rna_controller.rna_max
 
         i += 1
@@ -159,10 +162,75 @@ function rna(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, ils_controller:
         local move = rand(ils_controller.moves)
         local cost = execute(cvrp_aux, move, solution, ils_controller.editable_deliveries)
 
+        # # # TEST: Verify Cost after move
+        #     count += 1
+        #     println(ils_controller.edited_solution) 
+        #     println(ils_controller.best_solution)
+
+        #     local _routes = [move.route]
+        #     _routes = cat(_routes, move.routes, dims=1)
+        #     local tot = 0
+        #     for route in _routes
+        #         if (abs(route.distance / 1000 - getStringDistance(cvrp_aux, route.deliveries) / 1000) > 1e-5)
+        #             error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                    
+        #             local sum = 0
+        #             for i = 1:length(route.deliveries)-1
+        #                 sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+        #                 println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+        #             end
+        
+        #             println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+        #             println()
+        #             throw(error)
+        #         end
+        #         tot += route.distance
+        #     end
+
+        #     println("#### $tot")
+        #     println("#### $cost")
+        #     println()
+        # # # End of test
+
         if (cost <= 0 && move.hasMove)
             accept(cvrp_aux, move, solution)
-            
             ils_controller.edited_solution += cost
+
+                # TEST: Verify Cost after move
+                    # count += 1
+                    # println(ils_controller.edited_solution) 
+                    # println(ils_controller.best_solution)
+        
+                    # local _routes = solution
+                    # local tot = 0
+                    # for route in _routes
+                    #     if (abs(route.distance / 1000 - getStringDistance(cvrp_aux, route.deliveries) / 1000) > 1e-5)
+                    #         error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                            
+                    #         local sum = 0
+                    #         for i = 1:length(route.deliveries)-1
+                    #             sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+                    #             println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+                    #         end
+                
+                    #         println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+                    #         println()
+                    #         throw(error)
+                    #     end
+                    #     if (length(route.deliveries) > 2)
+                    #         tot += route.distance
+                    #     end
+                    # end
+        
+                    # println("#### $tot")
+                    # println(cost)
+                    # if (abs(tot - ils_controller.edited_solution) > 1e-5 )
+                    #     println(count)
+                    #     exit()
+                    # end
+                    # println()
+                # End of test
+
             
             if (cost < 0)
                 i = 1

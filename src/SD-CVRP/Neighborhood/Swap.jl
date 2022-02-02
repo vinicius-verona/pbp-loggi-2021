@@ -195,15 +195,15 @@ accept(_::CvrpAuxiliars, swap::Swap, _::Array{Route, 1}) = swap.accept += 1
 
 export reject
 function reject(cvrp_aux::CvrpAuxiliars, swap::Swap) 
-    
+
     # Update some statistics regarding the move execution
     swap.reject += 1
 
     for i = 1:swap.swap_size
-        
+
         deleteDelivery!(cvrp_aux, swap.first_route, swap.positions_route1[i])
         deleteDelivery!(cvrp_aux, swap.second_route, swap.positions_route2[i])
-        
+
         pushDelivery!(cvrp_aux, swap.first_route, swap.first_string[i], swap.positions_route1[i])
         pushDelivery!(cvrp_aux, swap.second_route, swap.second_string[i], swap.positions_route2[i])
 

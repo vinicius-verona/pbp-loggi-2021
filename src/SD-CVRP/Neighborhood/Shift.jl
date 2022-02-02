@@ -140,12 +140,15 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
         end
         
         shift.routes[i] = routes[route_index]
-        original_routes_distance += shift.routes[i].distance
+
+        if (!(route_index in route_indexes))
+            original_routes_distance += shift.routes[i].distance
+        end
+
         shift.insert_routes_index[i] = route_index
         
         local insertion_position = getBestInsertionPosition(cvrp_aux, shift.routes[i], delivery)
         if (insertion_position === typemax(Int64))
-            
             if (i > 1)
                 shift.hasMove = false
                 return typemax(Int64)
@@ -203,7 +206,7 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
 end
 
 export accept
-function accept(cvrp_aux::CvrpAuxiliars, shift::Shift, solution::Array{Route, 1})
+function accept(_::CvrpAuxiliars, shift::Shift, solution::Array{Route, 1})
 
     shift.accept += 1
 
