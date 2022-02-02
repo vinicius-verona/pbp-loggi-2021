@@ -144,6 +144,14 @@ Remove the selected string of deliveries from `route`. The string starts at `idx
 
 end
 
+export deleteDelivery!
+"""
+    deleteDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64)
+
+Remove the selected delivery from `route`.
+"""
+@inline deleteDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, idx::Int64) = deleteDelivery!(cvrp_aux, route, idx, idx)
+
 export insertRoute!
 """
     insertRoute!(route::Route, idx::Int64, routes::Array{Route,1})

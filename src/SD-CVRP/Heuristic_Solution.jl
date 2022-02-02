@@ -47,8 +47,6 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
         @warn "There are too few routes, there is a chance the neighbors will take too long selecting routes. Consider increasing the number of routes."
     end
 
-    Random.seed!(1)
-
     local editable_deliveries = deepcopy(slot_deliveries)
     local editable_solution = deepcopy(solution)
     local solution_cost = sum(map(x->x.distance, editable_solution))
@@ -63,8 +61,8 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     local shift_3  = Shift(3)
     local shift_4  = Shift(4)
 
-    # local moves::Array{Neighbor, 1} = [swap_2x2]
-    local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4, shift_1]
+    # local moves::Array{Neighbor, 1} = [shift_2]
+    local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
     # local moves::Array{Neighbor, 1} = [shift_1, shift_2, shift_3, shift_4]
     # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
                                     #    shift_1, shift_2, shift_3, shift_4]
@@ -119,7 +117,9 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
         rna(cvrp_aux, editable_solution, ils_controller, rna_controller)
 
         if (ils_controller.edited_solution <= ils_controller.best_solution)
-
+            # println(ils_controller.edited_solution) 
+            # println(ils_controller.best_solution)
+            # println()
             # Update controller.best_solution and solution
             copyRoute!(editable_solution, ils_controller.slot_deliveries, solution)
             ils_controller.best_solution = ils_controller.edited_solution

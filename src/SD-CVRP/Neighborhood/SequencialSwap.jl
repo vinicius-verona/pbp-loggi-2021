@@ -11,8 +11,8 @@ DEBUG = 0
     - However, d1...dn-1 are all fixed to the route.
 """
 
-export Swap
-mutable struct Swap <: Neighbor
+export SequencialSwap
+mutable struct SequencialSwap <: Neighbor
     
     id::String
     hasMove::Bool
@@ -46,7 +46,7 @@ mutable struct Swap <: Neighbor
     sideways::Int64
     total::Int64
 
-    Swap(size::Int64 = 1; id = "Swap-default") = begin
+    SequencialSwap(size::Int64 = 1; id = "SequencialSwap-default") = begin
         local hasMove   = false
         local swap_size = 1
         local first_route  = nothing
@@ -67,7 +67,7 @@ mutable struct Swap <: Neighbor
         local move_distance2 = 0
 
         swap_size = size
-        id === "Swap-default" ? id = "Swap-$swap_size" : nothing
+        id === "SequencialSwap-default" ? id = "SequencialSwap-$swap_size" : nothing
 
         return new(id, hasMove, swap_size, first_route, second_route, r1_starts_at,
                    r2_starts_at, r1_ends_at, r2_ends_at, first_string, second_string, 
@@ -78,10 +78,10 @@ mutable struct Swap <: Neighbor
 end
 
 export execute
-function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _) # Delta evaluation
+function execute(cvrp_aux::CvrpAuxiliars, swap::SequencialSwap, routes::Array{Route, 1}, _) # Delta evaluation
 
-    # WARNING: When Swap is used with shift, the same isnertion problem can occur.
-    # The same strategies can be applied. However, Swap itself is not wrong.
+    # WARNING: When SequencialSwap is used with SequencialShift, the same insertion problem can occur.
+    # The same strategies can be applied. However, SequencialSwap itself is not wrong.
 
     # Update some statistics regarding the move execution
     swap.hasMove = false
@@ -162,9 +162,9 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
 end
 
 export accept
-function accept(cvrp_aux::CvrpAuxiliars, swap::Swap, _::Array{Route, 1})
+function accept(cvrp_aux::CvrpAuxiliars, swap::SequencialSwap, _::Array{Route, 1})
 
-    # Swap deliveries between the selected routes
+    # SequencialSwap deliveries between the selected routes
     deleteDelivery!(cvrp_aux, swap.first_route, swap.r1_starts_at, swap.r1_ends_at)
     deleteDelivery!(cvrp_aux, swap.second_route, swap.r2_starts_at, swap.r2_ends_at)
     pushDelivery!(cvrp_aux, swap.first_route, swap.second_string, swap.r1_starts_at)
@@ -176,4 +176,4 @@ function accept(cvrp_aux::CvrpAuxiliars, swap::Swap, _::Array{Route, 1})
 end
 
 export reject
-reject(_::CvrpAuxiliars, swap::Swap) = swap.reject += 1
+reject(_::CvrpAuxiliars, swap::SequencialSwap) = swap.reject += 1

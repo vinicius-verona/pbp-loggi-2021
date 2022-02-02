@@ -9,6 +9,7 @@ using Initial_Solution: greedySolution
 using ClarkeWright: clarkeWrightSolution
 using Heuristic_Solution: ils 
 using Verifier
+using Random
 
 # Global variables used to controll solver
 SLOT_LENGTH     = 100
@@ -63,6 +64,8 @@ end
 # CVRP Program
 export cvrp
 function cvrp(arguments::Argument)
+
+    Random.seed!(arguments.seed)
 
     println("\n======> Start loading instance data")
     local instance  = loadInstance(arguments.input)
@@ -174,13 +177,13 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
         solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution=solution)
         
         local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
-        # solution = ils(auxiliar, solution, deliveries; execution_time=time)
+        solution = ils(auxiliar, solution, deliveries; execution_time=time)
         
     else
         solution = clarkeWrightSolution(instance, auxiliar, deliveries)
         
         local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
-        # solution = ils(auxiliar, solution, deliveries; execution_time=time)
+        solution = ils(auxiliar, solution, deliveries; execution_time=time)
     end
 
     fixAssignment!(solution, deliveries)

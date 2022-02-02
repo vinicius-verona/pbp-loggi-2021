@@ -15,6 +15,4 @@ FILES = readdir(DIR)
 filter!(x -> occursin(r".+\.jl", x), FILES)
 foreach(file -> include("$DIR$file"), FILES)
 
-# include("SwapDeliveries.jl")
-
 end # module

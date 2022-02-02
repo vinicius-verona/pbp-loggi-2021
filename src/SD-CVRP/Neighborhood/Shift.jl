@@ -4,12 +4,6 @@ using CVRP_Controllers: getDistance, pushDelivery!, deleteDelivery!,
                         getStringSize, getStringDistance, getInsertionDistance,
                         deleteRoute!
 
-"""
-    - This neighbor considers that, for a route of type {depot -> d1 -> d2 ... -> dk -> depot}
-    - if dn, where n <= k, is the first one not fixed to the route, then dn+1...dk are also not fixed.
-    - However, d1...dn-1 are all fixed to the route.
-"""
-
 export Shift
 mutable struct Shift <: Neighbor
     
@@ -20,8 +14,7 @@ mutable struct Shift <: Neighbor
     route::RouteOrNothing # Removal route
     routes::RoutesOrNothing # Insertion routes
 
-    removal_starts_at::Int64 # Index in which we start selecting deliveries in route
-    removal_ends_at::Int64 # Index in which we stop selecting deliveries in route
+    removal_positions::Array{Int64, 1} # Indexes from which we select deliveries in route
     insertion_positions::Array{Int64, 1} # Index in which we will insert each delivery
     insert_routes_index::Array{Int64, 1} # Index in which we start selecting deliveries in second_route
 
@@ -54,8 +47,7 @@ mutable struct Shift <: Neighbor
 
         local route      = nothing
         local routes     = Array{Delivery, 1}(undef, shift_size)
-        local removal_starts_at   = -1
-        local removal_ends_at     = -1
+        local removal_positions   = zeros(Int64, shift_size)
         local insertion_positions = zeros(Int64, shift_size)
         local insert_routes_index = zeros(Int64, shift_size)
         local string         = Array{Delivery, 1}(undef, 0)
@@ -69,9 +61,9 @@ mutable struct Shift <: Neighbor
         local move_distance  = 0
         local move_distances = zeros(Float64, shift_size)
 
-        return new(id, hasMove, shift_size, route, routes, removal_starts_at,
-                   removal_ends_at, insertion_positions, insert_routes_index,
-                   string, predecessors, original_size, original_sizes, move_size,
+        return new(id, hasMove, shift_size, route, routes, removal_positions,
+                   insertion_positions, insert_routes_index, string, 
+                   predecessors, original_size, original_sizes, move_size,
                    move_sizes, original_distance, original_distances, move_distance,
                    move_distances, 0, 0, 0, 0, 0, 0)
     end
@@ -81,35 +73,55 @@ end
 export execute
 function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1}, deliveries::Array{Delivery, 1}) # Delta evaluation
 
-    # FIXME: When slotted approach is used, a shift might insert a delivery in between 
-    # fixed deliveries. Eventually, when accepted, this new string will select fixed deliveries
-    # to be shifted (note line 100 only look for the first occurrence of fixed = false)
-    # Strategy 1: Block if all delivery in selected string are not fixed=false;
-    # Strategy 2: Select string that might or might not be sequencial.
-
     # Update some statistics regarding the move execution
     shift.hasMove = false
 
     # Selecting route
     shift.route = rand(routes)
+    local timeout = 0
     
-    while (length(shift.route.deliveries) < shift.shift_size)
+    while (length(shift.route.deliveries) - 2 < shift.shift_size)
         shift.route = rand(routes)
+        
+        timeout += 1
+        if (timeout > 100)
+            shift.hasMove = false
+            return typemax(Int64)
+        end
     end
 
     # Chose random string to shift
-    local route_size    = length(shift.route.deliveries)
-    local unfixed_route = findfirst(x -> x.fixed == false && x.index !== 0, shift.route.deliveries) 
+    local unfixed_route = findall(x -> x.fixed == false && x.index !== 0, shift.route.deliveries) 
 
-    if (unfixed_route === nothing || unfixed_route + shift.shift_size - 1 > route_size - 1)
+    if (length(unfixed_route) < shift.shift_size)
         shift.hasMove = false
         return typemax(Int64)
     end
-    
-    shift.removal_starts_at = unfixed_route
-    shift.removal_ends_at = unfixed_route + shift.shift_size - 1
 
-    shift.string  = shift.route.deliveries[shift.removal_starts_at:shift.removal_ends_at]
+    # Select first string
+    if (length(unfixed_route) == shift.shift_size)
+        shift.removal_positions = unfixed_route
+    else
+        timeout = 0
+
+        while (timeout <= 100)
+            timeout += 1
+            
+            local selected = rand(unfixed_route, shift.shift_size)
+            unique!(selected)
+
+            if (length(selected) == shift.shift_size)
+                shift.removal_positions = sort(selected, alg=MergeSort)
+                break
+            end
+        end
+        
+        if (timeout >= 100)
+            shift.removal_positions = unfixed_route[1:shift.shift_size]
+        end
+    end
+
+    shift.string  = shift.route.deliveries[shift.removal_positions]
 
     # Select closest routes and insertion positions
     # For each insertion position detected, shift delivery
@@ -165,20 +177,60 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
     shift.hasMove = true
     shift.total += 1
 
+    # # TEST: Verify Cost after move
+    #     local solution = [shift.route]
+    #     solution = cat(routes, shift.routes, dims=1)
+    #     for route in solution
+    #         if (abs(route.distance / 1000 - getStringDistance(cvrp_aux, route.deliveries) / 1000) > 1e-5)
+    #             error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                
+    #             local sum = 0
+    #             for i = 1:length(route.deliveries)-1
+    #                 sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+    #                 println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+    #             end
+    
+    #             println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+    #             println()
+    #             throw(error)
+    #         end
+    #     end
+    # # End of test
+
     # Calculate delta value
     return (shift.move_distance + move_routes_distance) - (shift.original_distance + original_routes_distance)
     
 end
 
 export accept
-function accept(_::CvrpAuxiliars, shift::Shift, solution::Array{Route, 1})
-    
+function accept(cvrp_aux::CvrpAuxiliars, shift::Shift, solution::Array{Route, 1})
+
     shift.accept += 1
 
     if (length(shift.route.deliveries) <= 2)
         deleteRoute!(shift.route.index, solution)
     end
 
+    # # TEST: Verify Cost after move
+    #     local routes = [shift.route]
+    #     routes = cat(routes, shift.routes, dims=1)
+
+    #     for route in routes
+    #         if (abs(route.distance / 1000 - getStringDistance(cvrp_aux, route.deliveries) / 1000) > 1e-5)
+    #             error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                
+    #             local sum = 0
+    #             for i = 1:length(route.deliveries)-1
+    #                 sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+    #                 println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+    #             end
+    
+    #             println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+    #             println()
+    #             throw(error)
+    #         end
+    #     end
+    # # End of test
 
 end
 
@@ -187,10 +239,31 @@ function reject(cvrp_aux::CvrpAuxiliars, shift::Shift)
 
     for i = 1:shift.shift_size
         if (shift.string[i].route_index !== shift.route.index)
-            deleteDelivery!(cvrp_aux, shift.routes[i], shift.string[i].visiting_index, shift.string[i].visiting_index)
-            pushDelivery!(cvrp_aux, shift.route, shift.string[i], shift.removal_starts_at + i - 1)
+            deleteDelivery!(cvrp_aux, shift.routes[i], shift.string[i].visiting_index)
+            pushDelivery!(cvrp_aux, shift.route, shift.string[i], shift.removal_positions[i])
         end
     end
+
+    # # TEST: Verify Cost after move
+    #     local routes = [shift.route]
+    #     routes = cat(routes, shift.routes, dims=1)
+        
+    #     for route in routes
+    #         if (abs(route.distance / 1000 - getStringDistance(cvrp_aux, route.deliveries) / 1000) > 1e-5)
+    #             error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
+                
+    #             local sum = 0
+    #             for i = 1:length(route.deliveries)-1
+    #                 sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
+    #                 println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
+    #             end
+    
+    #             println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
+    #             println()
+    #             throw(error)
+    #         end
+    #     end
+    # # End of test
 
     # Update move execution statistics
     shift.reject += 1
