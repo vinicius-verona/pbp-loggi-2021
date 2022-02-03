@@ -72,6 +72,16 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
     swap.first_route = nothing
     swap.second_route = nothing
 
+    swap.original_size1 = 0
+    swap.original_size2 = 0
+    swap.original_distance1 = 0
+    swap.original_distance2 = 0
+
+    swap.move_size1 = 0
+    swap.move_size2 = 0
+    swap.move_distance1 = 0
+    swap.move_distance2 = 0
+
     # Selecting routes
     swap.first_route = rand(routes)
     swap.second_route = rand(routes)
@@ -191,7 +201,14 @@ function execute(cvrp_aux::CvrpAuxiliars, swap::Swap, routes::Array{Route, 1}, _
 end
 
 export accept
-accept(_::CvrpAuxiliars, swap::Swap, _::Array{Route, 1}) = swap.accept += 1
+function accept(_::CvrpAuxiliars, swap::Swap, _::Array{Route, 1}, cost::Float64) 
+    
+    # Update some statistics regarding the move execution
+    swap.accept += 1
+
+    return cost
+
+end
 
 export reject
 function reject(cvrp_aux::CvrpAuxiliars, swap::Swap) 

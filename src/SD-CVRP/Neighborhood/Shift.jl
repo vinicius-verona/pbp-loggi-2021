@@ -76,6 +76,9 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
     # Update some statistics regarding the move execution
     shift.hasMove = false
 
+    shift.original_distance = 0
+    shift.move_distance = 0
+
     # Selecting route
     shift.route = rand(routes)
     local timeout = 0
@@ -122,12 +125,13 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
     end
 
     shift.string  = shift.route.deliveries[shift.removal_positions]
+    shift.original_distance = getStringDistance(cvrp_aux, shift.route.deliveries)
 
     # Select closest routes and insertion positions
     # For each insertion position detected, shift delivery
     local original_routes_distance = 0
     local move_routes_distance     = 0
-    
+
     local route_indexes = []
     for i = 1:shift.shift_size
 
@@ -200,40 +204,29 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
     #     end
     # # End of test
 
+    # println("Move Dist: $(shift.move_distance)")
+    # println("Move Dists: $(move_routes_distance)")
+
+    # println("Orig Dist: $(shift.original_distance)")
+    # println("Orig Dists: $(original_routes_distance)")
+    # println((shift.move_distance + move_routes_distance) - (shift.original_distance + original_routes_distance))
+
     # Calculate delta value
     return (shift.move_distance + move_routes_distance) - (shift.original_distance + original_routes_distance)
     
 end
 
 export accept
-function accept(_::CvrpAuxiliars, shift::Shift, solution::Array{Route, 1})
+function accept(_::CvrpAuxiliars, shift::Shift, solution::Array{Route, 1}, cost::Float64)
 
     shift.accept += 1
-
+    
     if (length(shift.route.deliveries) <= 2)
+        cost -= shift.route.distance
         deleteRoute!(shift.route.index, solution)
     end
 
-    # # TEST: Verify Cost after move
-    #     local routes = [shift.route]
-    #     routes = cat(routes, shift.routes, dims=1)
-
-    #     for route in routes
-    #         if (abs(route.distance / 1000 - getStringDistance(cvrp_aux, route.deliveries) / 1000) > 1e-5)
-    #             error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
-                
-    #             local sum = 0
-    #             for i = 1:length(route.deliveries)-1
-    #                 sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
-    #                 println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
-    #             end
-    
-    #             println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
-    #             println()
-    #             throw(error)
-    #         end
-    #     end
-    # # End of test
+    return cost
 
 end
 
@@ -246,27 +239,6 @@ function reject(cvrp_aux::CvrpAuxiliars, shift::Shift)
             pushDelivery!(cvrp_aux, shift.route, shift.string[i], shift.removal_positions[i])
         end
     end
-
-    # # TEST: Verify Cost after move
-    #     local routes = [shift.route]
-    #     routes = cat(routes, shift.routes, dims=1)
-        
-    #     for route in routes
-    #         if (abs(route.distance / 1000 - getStringDistance(cvrp_aux, route.deliveries) / 1000) > 1e-5)
-    #             error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
-                
-    #             local sum = 0
-    #             for i = 1:length(route.deliveries)-1
-    #                 sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
-    #                 println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
-    #             end
-    
-    #             println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
-    #             println()
-    #             throw(error)
-    #         end
-    #     end
-    # # End of test
 
     # Update move execution statistics
     shift.reject += 1

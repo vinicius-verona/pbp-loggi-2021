@@ -77,7 +77,7 @@ function cvrp(arguments::Argument)
     println("=> Instance min # of vehicles : ", instance.min_number_routes, " routes")
     
     # Update INSTANCE_LENGTH variable
-    global SLOT_LENGTH = length(instance.deliveries)
+    # global SLOT_LENGTH = length(instance.deliveries)
     global INSTANCE_LENGTH = length(instance.deliveries)
     local execution_stats = ExecStatistic(now(), now(), now(), now(), now(), now(), now(), now(), now(), now())
 
@@ -128,7 +128,7 @@ function cvrp(arguments::Argument)
     execution_stats.solver_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.solver_initial_timestamp)
 
-    local solver_solution = solve(instance, auxiliars)
+    local solver_solution = solve(instance, auxiliars; model=model)
     execution_stats.solver_completion_timestamp = now()
     println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, solver_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.solver_completion_timestamp)
@@ -161,7 +161,7 @@ Apply initial algorithm and then a heuristic method in order to solve DCVRP.
 * `Clarke-Wright` - Initial Algorithm
 * `Iterated Local-Search (ILS)` - Heuristic Algorithm (improvement phase)
 """
-function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route, 1}}=nothing)
+function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route, 1}}=nothing, model)
 
     global SLOT_COUNTER += 1
     local current_slot = SLOT_COUNTER * SLOT_LENGTH
@@ -174,15 +174,17 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
     local deliveries = instance.deliveries[1 : current_slot]
 
     if (solution !== nothing)
+        # solution = greedySolution(instance, auxiliar, model)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution=solution)
         
-        local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+        local time = Int(round((18e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
         solution = ils(auxiliar, solution, deliveries; execution_time=time)
         
     else
+        # solution = greedySolution(instance, auxiliar, model)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries)
         
-        local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+        local time = Int(round((18e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
         solution = ils(auxiliar, solution, deliveries; execution_time=time)
     end
 
@@ -192,7 +194,7 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
         return solution
     end
 
-    return solve(instance, auxiliar; solution=solution)
+    return solve(instance, auxiliar; solution=solution, model=model)
 
 end
 
