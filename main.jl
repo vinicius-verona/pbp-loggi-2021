@@ -8,7 +8,7 @@ using PBP_Loggi
 **`Author:`** Vinicius Gabriel Angelozzi Verona de Resende
 """
 main(ARGS) = begin
-    
+
     let args = ARGS, arguments = Argument()
 
         if (length(args) <= 3)
@@ -20,32 +20,34 @@ main(ARGS) = begin
 
             if (argument == "-s" || arguments == "--seed")
                 arguments.seed = parse(Int64, args[i+1])
-                i += 1 
-                
+                i += 1
+
             elseif (argument == "-i" || arguments == "--input")
                 arguments.input = args[i+1]
-                i += 1 
-                
+                i += 1
+
             elseif (argument == "-t" || arguments == "--timer")
                 arguments.execution_time = parse(Int64, args[i+1])
-                i += 1 
-                
+                i += 1
+
             elseif (argument == "-k" || arguments == "--k-near")
                 arguments.k_nearest = parse(Int64, args[i+1])
-                i += 1 
+                i += 1
             end
         end
 
         if (arguments.input === "" || match(r".+\.json", arguments.input) === nothing)
             throw("An input JSON file has not been passed as argument! See help using '-h' argument for more information")
         end
-        
+
         cvrp(arguments)
 
     end
 
 end
 
-if (!isinteractive())
-    main(ARGS)
-end
+# if (!isinteractive())
+#     main(ARGS)
+# end
+
+main(["-i", "data/input/train/df-0/cvrp-0-df-0.json", "-s", "1"])

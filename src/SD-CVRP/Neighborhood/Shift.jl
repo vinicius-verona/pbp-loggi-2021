@@ -85,22 +85,22 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
     shift.hasMove = false
 
     # Reset values
-    shift = Shift(shift.shift_size)
-    # shift.route      = nothing
-    # shift.routes     = Array{Delivery, 1}(undef, shift.shift_size)
-    # shift.removal_positions   = zeros(Int64, shift.shift_size)
-    # shift.insertion_positions = zeros(Int64, shift.shift_size)
-    # shift.insert_routes_index = zeros(Int64, shift.shift_size)
-    # shift.string         = Array{Delivery, 1}(undef, 0)
-    # shift.predecessors   = Array{Delivery, 1}(undef, shift.shift_size)
-    # shift.original_size  = 0
-    # shift.original_sizes = zeros(Int64, shift.shift_size)
-    # shift.move_size  = 0
-    # shift.move_sizes = zeros(Int64, shift.shift_size)
-    # shift.original_distance  = 0
-    # shift.original_distances = zeros(Float64, shift.shift_size)
-    # shift.move_distance  = 0
-    # shift.move_distances = zeros(Float64, shift.shift_size)
+    # shift = Shift(shift.shift_size)
+    shift.route      = nothing
+    shift.routes     = Array{Delivery, 1}(undef, shift.shift_size)
+    shift.removal_positions   = zeros(Int64, shift.shift_size)
+    shift.insertion_positions = zeros(Int64, shift.shift_size)
+    shift.insert_routes_index = zeros(Int64, shift.shift_size)
+    shift.string         = Array{Delivery, 1}(undef, 0)
+    shift.predecessors   = Array{Delivery, 1}(undef, shift.shift_size)
+    shift.original_size  = 0
+    shift.original_sizes = zeros(Int64, shift.shift_size)
+    shift.move_size  = 0
+    shift.move_sizes = zeros(Int64, shift.shift_size)
+    shift.original_distance  = 0
+    shift.original_distances = zeros(Float64, shift.shift_size)
+    shift.move_distance  = 0
+    shift.move_distances = zeros(Float64, shift.shift_size)
 
     # local _debug = OrderedDict( "id" => shift.id,
     #     "hasMove" => shift.hasMove,
@@ -190,7 +190,7 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
 
         local route_index = getClosestRoute(cvrp_aux, deliveries, routes, delivery)
         if (route_index === typemax(Int64) || route_index === shift.route.index)
-            if (i > 1)
+            if (i == 1)
                 shift.hasMove = false
                 return typemax(Int64)
             else
@@ -209,7 +209,7 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
         
         local insertion_position = getBestInsertionPosition(cvrp_aux, shift.routes[i], delivery)
         if (insertion_position === typemax(Int64))
-            if (i > 1)
+            if (i == 1)
                 shift.hasMove = false
             else
                 shift.hasMove = true

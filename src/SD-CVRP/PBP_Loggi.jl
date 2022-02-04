@@ -7,7 +7,7 @@ using CVRP_Controllers: fixAssignment!
 using Cluster_Instance: train
 using Initial_Solution: greedySolution
 using ClarkeWright: clarkeWrightSolution
-using Heuristic_Solution: ils 
+using Heuristic_Solution: ils
 using Verifier
 using Random
 
@@ -20,7 +20,7 @@ INSTANCE_LENGTH = 0
 # Execution Structures
 export Argument
 mutable struct Argument
-    
+
     seed::Int64
     input::String
     execution_time::Int64
@@ -68,6 +68,7 @@ function cvrp(arguments::Argument)
     Random.seed!(arguments.seed)
 
     println("\n======> Start loading instance data")
+    println(arguments)
     local instance  = loadInstance(arguments.input)
     local auxiliars = loadDistanceMatrix(instance.name)
     println("=> Instance name     : ", instance.name)
@@ -75,37 +76,37 @@ function cvrp(arguments::Argument)
     println("=> Instance capacity : ", instance.capacity)
     println("=> Instance # of deliveries   : ", length(instance.deliveries))
     println("=> Instance min # of vehicles : ", instance.min_number_routes, " routes")
-    
+
     # Update INSTANCE_LENGTH variable
     # global SLOT_LENGTH = length(instance.deliveries)
     global INSTANCE_LENGTH = length(instance.deliveries)
     local execution_stats = ExecStatistic(now(), now(), now(), now(), now(), now(), now(), now(), now(), now())
 
     # Clustering instance
-    println("\n======> Start clustering instance")
-    execution_stats.train_initial_timestamp = now()
-    println("=> Start timestamp : ", execution_stats.train_initial_timestamp)
-    
-    local model = train(instance.region)
-    execution_stats.train_completion_timestamp = now()
-    println("=> # of clusters   : ", length(model.centroids), " centroids")
-    println("=> Compl. timestamp: ", execution_stats.train_completion_timestamp)
-    
+    # println("\n======> Start clustering instance")
+    # execution_stats.train_initial_timestamp = now()
+    # println("=> Start timestamp : ", execution_stats.train_initial_timestamp)
+
+    # local model = train(instance.region)
+    # execution_stats.train_completion_timestamp = now()
+    # println("=> # of clusters   : ", length(model.centroids), " centroids")
+    # println("=> Compl. timestamp: ", execution_stats.train_completion_timestamp)
+
     # Greedy Solution
-    println("\n======> Start greedy solution")
-    execution_stats.greedy_initial_timestamp = now()
-    println("=> Start timestamp : ", execution_stats.greedy_initial_timestamp)
-    
-    local greedy_solution = greedySolution(deepcopy(instance), auxiliars, model)
-    execution_stats.greedy_completion_timestamp = now()
-    println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, greedy_solution)), " routes")
-    println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
+    # println("\n======> Start greedy solution")
+    # execution_stats.greedy_initial_timestamp = now()
+    # println("=> Start timestamp : ", execution_stats.greedy_initial_timestamp)
+
+    # local greedy_solution = greedySolution(deepcopy(instance), auxiliars, model)
+    # execution_stats.greedy_completion_timestamp = now()
+    # println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, greedy_solution)), " routes")
+    # println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
 
     # Clarke-Wright Solution
     # println("\n======> Start Clarke-Wright solution")
     # execution_stats.cw_initial_timestamp = now()
     # println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
-    
+
     # local cw_solution = clarkeWrightSolution(instance, auxiliars, Int(round(length(instance.deliveries)*0.2, RoundDown)))
     # local cw_solution = clarkeWrightSolution(instance, auxiliars, length(instance.deliveries))
     # execution_stats.cw_completion_timestamp = now()
@@ -128,7 +129,7 @@ function cvrp(arguments::Argument)
     execution_stats.solver_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.solver_initial_timestamp)
 
-    local solver_solution = solve(instance, auxiliars; model=model)
+    local solver_solution = solve(instance, auxiliars; model=nothing)
     execution_stats.solver_completion_timestamp = now()
     println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, solver_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.solver_completion_timestamp)
@@ -142,7 +143,7 @@ function cvrp(arguments::Argument)
     # println("Heuristic: ", sum(map(x -> x.distance, heuristic_solution)) / 1000)
     println("Solved: ", sum(map(x -> x.distance, solver_solution)) / 1000)
     println()
-    
+
     # Verify
     # println("\n\n======> Verifying Initial Solution <======")
     # verify(instance=instance, auxiliar=auxiliars, solution=cw_solution)
@@ -176,20 +177,20 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
     if (solution !== nothing)
         # solution = greedySolution(instance, auxiliar, model)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution=solution)
-        
+
         local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
         solution = ils(auxiliar, solution, deliveries; execution_time=time)
-        
+
     else
         # solution = greedySolution(instance, auxiliar, model)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries)
-        
+
         local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
         solution = ils(auxiliar, solution, deliveries; execution_time=time)
     end
 
     fixAssignment!(solution, deliveries)
-    
+
     if (LAST_SLOT)
         return solution
     end
@@ -208,7 +209,7 @@ function displayHelp()
     print("#         |         Dynamic Capacitated Vehicle Routing Problems         |         #\n")
     print("#          --------------------------------------------------------------          #\n")
     print(" ##################################################################################\n\n")
-    
+
     print(" ------------------------------------ Commands --------------------------------------\n")
     print("|                                                                                    |\n")
     print("|> [ --help   → -h ]  |>  Not Required  |> Display this menu                         |\n")
@@ -216,7 +217,7 @@ function displayHelp()
     print("|> [ --input  → -i ]  |>    Required    |> Set instance used                         |\n")
     print("|                                                                                    |\n")
     print(" ------------------------------------------------------------------------------------\n\n")
-    
+
     print(" ----------- Type ------------\n")
     print("|                             |\n")
     print("|> -h → <JSON> → NOT REQUIRED |\n")
@@ -224,7 +225,7 @@ function displayHelp()
     print("|> -i → <STR.> →   REQUIRED   |\n")
     print("|                             |\n")
     print(" -----------------------------\n\n")
-    
+
     print(" -------------------------------- Execution Example ---------------------------------\n")
     print("|                                                                                    |\n")
     print("|> Syntax: julia -O 3 main.jl -i path/instance.json -s 1                             |\n")

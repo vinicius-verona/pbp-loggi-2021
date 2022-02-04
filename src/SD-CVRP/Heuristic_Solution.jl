@@ -62,8 +62,9 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     local shift_3  = Shift(3)
     local shift_4  = Shift(4)
     
-    local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
-    # local moves::Array{Neighbor, 1} = [shift_1, shift_2, shift_3, shift_4]
+    # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
+    local moves::Array{Neighbor, 1} = [shift_1, shift_2, shift_3, shift_4]
+    # local moves::Array{Neighbor, 1} = [shift_1, shift_2]
     # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
                                     #    shift_1, shift_2, shift_3, shift_4]
 
@@ -120,13 +121,8 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
 
         if (ils_controller.edited_solution <= ils_controller.best_solution)
             
-            # println(ils_controller.edited_solution) 
-            # println(ils_controller.best_solution)
-            # println()
-
-            if (ils_controller.edited_solution < 0)
-                exit()
-            end
+            println("Edit Solution: ", ils_controller.edited_solution) 
+            println("Best Solution: ", ils_controller.best_solution)
 
             # Update controller.best_solution and solution
             copyRoute!(editable_solution, ils_controller.slot_deliveries, solution)
@@ -134,6 +130,12 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
             rna_controller.iter = 0
             rna_controller.perturbance = 0
 
+            println("Sum: ", sum(map(x->x.distance, solution)))
+            println()
+            if (ils_controller.edited_solution < 0)
+                throw("< 0")
+                exit()
+            end
 
         else
             # Reject edited_solution by updating it to be like best solution
