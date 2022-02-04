@@ -1,0 +1,18 @@
+┌ Warning: There are too few routes, there is a chance the neighbors will take too long selecting routes. Consider increasing the number of routes.
+└ @ Heuristic_Solution D:\Documents\Dev\IC\IC-FILES\Final_Repositories\PBP-Loggi-modules\pbp-loggi-2021\src\SD-CVRP\Heuristic_Solution.jl:47
+ERROR: LoadError: BoundsError: attempt to access 0-element Array{CVRP_Structures.Delivery,1} at index [1]
+Stacktrace:
+ [1] getindex at .\array.jl:809 [inlined]
+ [2] copyRoute! at D:\Documents\Dev\IC\IC-FILES\Final_Repositories\PBP-Loggi-modules\pbp-loggi-2021\src\SD-CVRP\CVRP_Controllers.jl:600 [inlined]
+ [3] copyRoute! at D:\Documents\Dev\IC\IC-FILES\Final_Repositories\PBP-Loggi-modules\pbp-loggi-2021\src\SD-CVRP\CVRP_Controllers.jl:550 [inlined]
+ [4] ils(::CVRP_Structures.CvrpAuxiliars, ::Array{CVRP_Structures.Route,1}, ::Array{CVRP_Structures.Delivery,1}; ils_controller::Nothing, rna_controller::Nothing, execution_time::Int64) at D:\Documents\Dev\IC\IC-FILES\Final_Repositories\PBP-Loggi-modules\pbp-loggi-2021\src\SD-CVRP\Heuristic_Solution.jl:129
+ [5] solve(::CVRP_Structures.CvrpData, ::CVRP_Structures.CvrpAuxiliars; solution::Array{CVRP_Structures.Route,1}, model::CVRP_Structures.Model) at D:\Documents\Dev\IC\IC-FILES\Final_Repositories\PBP-Loggi-modules\pbp-loggi-2021\src\SD-CVRP\PBP_Loggi.jl:181
+ [6] solve(::CVRP_Structures.CvrpData, ::CVRP_Structures.CvrpAuxiliars; solution::Array{CVRP_Structures.Route,1}, model::CVRP_Structures.Model) at D:\Documents\Dev\IC\IC-FILES\Final_Repositories\PBP-Loggi-modules\pbp-loggi-2021\src\SD-CVRP\PBP_Loggi.jl:197 (repeats 14 times)
+ [7] cvrp(::Argument) at D:\Documents\Dev\IC\IC-FILES\Final_Repositories\PBP-Loggi-modules\pbp-loggi-2021\src\SD-CVRP\PBP_Loggi.jl:131
+ [8] main(::Array{String,1}) at D:\Documents\Dev\IC\IC-FILES\Final_Repositories\PBP-Loggi-modules\pbp-loggi-2021\main.jl:43
+ [9] top-level scope at D:\Documents\Dev\IC\IC-FILES\Final_Repositories\PBP-Loggi-modules\pbp-loggi-2021\main.jl:50
+ [10] include(::Function, ::Module, ::String) at .\Base.jl:380
+ [11] include(::Module, ::String) at .\Base.jl:368
+ [12] exec_options(::Base.JLOptions) at .\client.jl:296
+ [13] _start() at .\client.jl:506
+in expression starting at D:\Documents\Dev\IC\IC-FILES\Final_Repositories\PBP-Loggi-modules\pbp-loggi-2021\main.jl:49

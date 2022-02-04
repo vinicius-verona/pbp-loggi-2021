@@ -1,34 +1,4 @@
 
- ################################ PBP-Loggi  2021 #################################
-#          --------------------------------------------------------------          #
-#         |            Hibrid algorithms applied to Last-Mile            |         #
-#         |         Dynamic Capacitated Vehicle Routing Problems         |         #
-#          --------------------------------------------------------------          #
- ##################################################################################
-
- ------------------------------------ Commands --------------------------------------
-|                                                                                    |
-|> [ --help   → -h ]  |>  Not Required  |> Display this menu                         |
-|> [ --seed   → -s ]  |>  Not Required  |> Set seed used                             |
-|> [ --input  → -i ]  |>    Required    |> Set instance used                         |
-|                                                                                    |
- ------------------------------------------------------------------------------------
-
- ----------- Type ------------
-|                             |
-|> -h → <JSON> → NOT REQUIRED |
-|> -s → <INT.> → NOT REQUIRED |
-|> -i → <STR.> →   REQUIRED   |
-|                             |
- -----------------------------
-
- -------------------------------- Execution Example ---------------------------------
-|                                                                                    |
-|> Syntax: julia -O 3 main.jl -i path/instance.json -s 1                             |
-|                                                                                    |
- ------------------------------------------------------------------------------------
-
-
 ======> Start loading instance data
 => Instance name     : cvrp-2-rj-89
 => Instance region   : rj-2
@@ -37,22 +7,22 @@
 => Instance min # of vehicles : 61 routes
 
 ======> Start clustering instance
-=> Start timestamp : 2022-02-01T05:03:26.322
+=> Start timestamp : 2022-02-03T06:48:11.897
 => # of clusters   : 66 centroids
-=> Compl. timestamp: 2022-02-01T05:03:32.275
+=> Compl. timestamp: 2022-02-03T06:48:17.944
 
 ======> Start greedy solution
-=> Start timestamp : 2022-02-01T05:03:32.275
+=> Start timestamp : 2022-02-03T06:48:17.944
 => # of vehicles   : 92 routes
-=> Compl. timestamp: 2022-02-01T05:03:32.385
+=> Compl. timestamp: 2022-02-03T06:48:18.022
 
 ======> Start Slotted solver solution
-=> Start timestamp : 2022-02-01T05:03:32.385
+=> Start timestamp : 2022-02-03T06:48:18.022
 => # of vehicles   : 62 routes
-=> Compl. timestamp: 2022-02-01T05:18:34.242
+=> Compl. timestamp: 2022-02-03T07:03:34.456
 
 ======> Results (Distance in KM)
-Solved: 2243.179700013523
+Solved: 2737.4445000109404
 
 
 
@@ -66,6 +36,7 @@ Solved: 2243.179700013523
 ======> Start verifying sum  of delivery sizes
 	-> Status: [PASSED]
 ======> Start verifying sum  of delivery distances
+2.7374445000109393e6
 	-> Status: [PASSED]
 
 

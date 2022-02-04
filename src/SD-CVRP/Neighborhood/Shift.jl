@@ -4,6 +4,10 @@ using CVRP_Controllers: getDistance, pushDelivery!, deleteDelivery!,
                         getStringSize, getStringDistance, getInsertionDistance,
                         deleteRoute!
 
+
+using JSON # DEBUG
+using OrderedCollections # DEBUG
+
 export Shift
 mutable struct Shift <: Neighbor
     
@@ -70,14 +74,61 @@ mutable struct Shift <: Neighbor
 
 end
 
+# _debug = nothing
+
 export execute
 function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1}, deliveries::Array{Delivery, 1}) # Delta evaluation
+
+    # global _debug = deepcopy(routes)
 
     # Update some statistics regarding the move execution
     shift.hasMove = false
 
-    shift.original_distance = 0
-    shift.move_distance = 0
+    # Reset values
+    shift = Shift(shift.shift_size)
+    # shift.route      = nothing
+    # shift.routes     = Array{Delivery, 1}(undef, shift.shift_size)
+    # shift.removal_positions   = zeros(Int64, shift.shift_size)
+    # shift.insertion_positions = zeros(Int64, shift.shift_size)
+    # shift.insert_routes_index = zeros(Int64, shift.shift_size)
+    # shift.string         = Array{Delivery, 1}(undef, 0)
+    # shift.predecessors   = Array{Delivery, 1}(undef, shift.shift_size)
+    # shift.original_size  = 0
+    # shift.original_sizes = zeros(Int64, shift.shift_size)
+    # shift.move_size  = 0
+    # shift.move_sizes = zeros(Int64, shift.shift_size)
+    # shift.original_distance  = 0
+    # shift.original_distances = zeros(Float64, shift.shift_size)
+    # shift.move_distance  = 0
+    # shift.move_distances = zeros(Float64, shift.shift_size)
+
+    # local _debug = OrderedDict( "id" => shift.id,
+    #     "hasMove" => shift.hasMove,
+    #     "shift_size" => shift.shift_size,
+    #     "route" => shift.route,
+    #     "routes" => shift.routes,
+    #     "removal_positions" => shift.removal_positions,
+    #     "insertion_positions" => shift.insertion_positions,
+    #     "insert_routes_index" => shift.insert_routes_index,
+    #     "string" => shift.string,
+    #     "predecessors" => shift.predecessors,
+    #     "original_size" => shift.original_size,
+    #     "original_sizes" => shift.original_sizes,
+    #     "move_size" => shift.move_size,
+    #     "move_sizes" => shift.move_sizes,
+    #     "original_distance" => shift.original_distance,
+    #     "original_distances" => shift.original_distances,
+    #     "move_distance" => shift.move_distance,
+    #     "move_distances" => shift.move_distances,
+    #     "accept" => shift.accept,
+    #     "reject" => shift.reject,
+    #     "improvements" => shift.improvements,
+    #     "worsens" => shift.worsens,
+    #     "sideways" => shift.sideways,
+    #     "total" => shift.total
+    # )
+
+    # println(_debug)
 
     # Selecting route
     shift.route = rand(routes)
@@ -138,9 +189,14 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
         local delivery = shift.string[i]
 
         local route_index = getClosestRoute(cvrp_aux, deliveries, routes, delivery)
-        if (route_index === typemax(Int64))
-            shift.hasMove = false
-            return typemax(Int64)
+        if (route_index === typemax(Int64) || route_index === shift.route.index)
+            if (i > 1)
+                shift.hasMove = false
+                return typemax(Int64)
+            else
+                shift.hasMove = true
+                return typemax(Int64)
+            end
         end
         
         shift.routes[i] = routes[route_index]
@@ -155,11 +211,11 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
         if (insertion_position === typemax(Int64))
             if (i > 1)
                 shift.hasMove = false
-                return typemax(Int64)
             else
                 shift.hasMove = true
-                return typemax(Int64)
             end
+
+            return typemax(Int64)
         end
         
         shift.predecessors[i] = shift.routes[i].deliveries[insertion_position - 1]
@@ -176,33 +232,26 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
         move_routes_distance += shift.routes[i].distance # If the route has already been summed, remove value before sum
         
     end
-    
+
+    # # Debug
+    # local _original_routes_distance = 0
+    # for i in route_indexes
+    #     _original_routes_distance += _debug[i].distance
+    # end
+    # if (abs(_original_routes_distance - original_routes_distance) > 1e-5)
+    #     throw("Diff")
+    # end
+    # #######
+
+    # println("Rotas: ", route_indexes, " - Length of routes: ", length(shift.routes), " - Routes: ", map(x->x.index, shift.routes))
+    # println("insert_routes_index: ", shift.insert_routes_index)
+
     # Update removal route distance
     shift.move_distance = shift.route.distance
 
     # Update some statistics regarding the move execution
     shift.hasMove = true
     shift.total += 1
-
-    # # TEST: Verify Cost after move
-    #     local solution = [shift.route]
-    #     solution = cat(routes, shift.routes, dims=1)
-    #     for route in solution
-    #         if (abs(route.distance / 1000 - getStringDistance(cvrp_aux, route.deliveries) / 1000) > 1e-5)
-    #             error = "Different Distance: Route($(route.distance / 1000) KM) | String($(getStringDistance(cvrp_aux, route.deliveries) / 1000) KM)"
-                
-    #             local sum = 0
-    #             for i = 1:length(route.deliveries)-1
-    #                 sum += getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1])
-    #                 println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(cvrp_aux, route.deliveries[i], route.deliveries[i+1]))")
-    #             end
-    
-    #             println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
-    #             println()
-    #             throw(error)
-    #         end
-    #     end
-    # # End of test
 
     # println("Move Dist: $(shift.move_distance)")
     # println("Move Dists: $(move_routes_distance)")
@@ -234,7 +283,7 @@ export reject
 function reject(cvrp_aux::CvrpAuxiliars, shift::Shift)
 
     for i = 1:shift.shift_size
-        if (shift.string[i].route_index !== shift.route.index)
+        if (isassigned(shift.string, i) && shift.string[i].route_index !== shift.route.index)
             deleteDelivery!(cvrp_aux, shift.routes[i], shift.string[i].visiting_index)
             pushDelivery!(cvrp_aux, shift.route, shift.string[i], shift.removal_positions[i])
         end
