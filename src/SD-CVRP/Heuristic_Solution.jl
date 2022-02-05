@@ -52,7 +52,7 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     local editable_deliveries = deepcopy(slot_deliveries)
     local editable_solution = deepcopy(solution)
     local solution_cost = sum(map(x->x.distance, editable_solution))
-    println("\nEdited Solution: ", solution_cost)
+    # println("\nEdited Solution: ", solution_cost)
 
     local swap_1x1 = Swap(1)
     local swap_2x2 = Swap(2)
@@ -123,8 +123,8 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
 
         if (ils_controller.edited_solution <= ils_controller.best_solution)
             
-            println("Edit Solution: ", ils_controller.edited_solution) 
-            println("Best Solution: ", ils_controller.best_solution)
+            # println("Edit Solution: ", ils_controller.edited_solution) 
+            # println("Best Solution: ", ils_controller.best_solution)
 
             # Update controller.best_solution and solution
             copyRoute!(editable_solution, ils_controller.slot_deliveries, solution)
@@ -132,12 +132,12 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
             rna_controller.iter = 0
             rna_controller.perturbance = 0
 
-            println("Sum: ", sum(map(x->x.distance, solution)))
-            println()
-            if (ils_controller.edited_solution < 0)
-                throw("< 0")
-                exit()
-            end
+            # println("Sum: ", sum(map(x->x.distance, solution)))
+            # println()
+            # if (ils_controller.edited_solution < 0)
+            #     throw("< 0")
+            #     exit()
+            # end
 
         else
             # Reject edited_solution by updating it to be like best solution
@@ -160,7 +160,7 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     # println("Total Reject: ", sum(map(x -> x.reject, moves)))
     # println("Total Moves: ", sum(map(x -> x.total, moves)))
 
-    println("Best Solution: ", ils_controller.best_solution)
+    # println("Best Solution: ", ils_controller.best_solution)
 
     return solution
 

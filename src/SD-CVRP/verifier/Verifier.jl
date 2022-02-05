@@ -198,8 +198,6 @@ function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::
     local response = true
     local error = ""
 
-    local total = 0
-
     for route in solution
         if (abs(route.distance / 1000 - getStringDistance(auxiliar, route.deliveries) / 1000) > 1e-5)
             response = false
@@ -215,10 +213,7 @@ function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::
             println()
             return response, error
         end
-        total += route.distance
     end
-
-    println(total)
 
     return response, error
 

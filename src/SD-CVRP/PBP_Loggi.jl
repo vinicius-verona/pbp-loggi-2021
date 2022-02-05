@@ -10,6 +10,7 @@ using ClarkeWright: clarkeWrightSolution
 using Heuristic_Solution: ils
 using Verifier
 using Random
+using Output
 
 using Debugger
 
@@ -70,7 +71,6 @@ function cvrp(arguments::Argument)
     Random.seed!(arguments.seed)
 
     println("\n======> Start loading instance data")
-    println(arguments)
     local instance  = loadInstance(arguments.input)
     local auxiliars = loadDistanceMatrix(instance.name)
     println("=> Instance name     : ", instance.name)
@@ -136,10 +136,6 @@ function cvrp(arguments::Argument)
     println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, solver_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.solver_completion_timestamp)
 
-    # Generate Output
-    # generateOutput(greedy_solution)
-    # generateOutput(heuristic_solution)
-
     println("\n======> Results (Distance in KM)")
     # println("Greedy   : ", sum(map(x -> x.distance, greedy_solution)) / 1000)
     # println("Heuristic: ", sum(map(x -> x.distance, heuristic_solution)) / 1000)
@@ -154,6 +150,9 @@ function cvrp(arguments::Argument)
     println("\n\n======> Verifying Solver Solution <======")
     verify(auxiliar=auxiliars, solution=solver_solution)
     println()
+
+    # Generate Output
+    generateOutput(instance, solver_solution; algorithm="Slot")
 
 end
 
@@ -180,14 +179,14 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
         # solution = greedySolution(instance, auxiliar, model)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution=solution)
 
-        local time = Int(round((18e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+        local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
         solution = ils(auxiliar, solution, deliveries; execution_time=time)
 
     else
         # solution = greedySolution(instance, auxiliar, model)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries)
 
-        local time = Int(round((18e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+        local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
         solution = ils(auxiliar, solution, deliveries; execution_time=time)
     end
 

@@ -1,2 +1,0 @@
-┌ Warning: There are too few routes, there is a chance the neighbors will take too long selecting routes. Consider increasing the number of routes.
-└ @ Heuristic_Solution D:\Documents\Dev\IC\IC-FILES\Final_Repositories\PBP-Loggi-modules\pbp-loggi-2021\src\SD-CVRP\Heuristic_Solution.jl:47
