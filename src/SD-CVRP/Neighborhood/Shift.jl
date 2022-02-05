@@ -102,34 +102,6 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
     shift.move_distance  = 0
     shift.move_distances = zeros(Float64, shift.shift_size)
 
-    # local _debug = OrderedDict( "id" => shift.id,
-    #     "hasMove" => shift.hasMove,
-    #     "shift_size" => shift.shift_size,
-    #     "route" => shift.route,
-    #     "routes" => shift.routes,
-    #     "removal_positions" => shift.removal_positions,
-    #     "insertion_positions" => shift.insertion_positions,
-    #     "insert_routes_index" => shift.insert_routes_index,
-    #     "string" => shift.string,
-    #     "predecessors" => shift.predecessors,
-    #     "original_size" => shift.original_size,
-    #     "original_sizes" => shift.original_sizes,
-    #     "move_size" => shift.move_size,
-    #     "move_sizes" => shift.move_sizes,
-    #     "original_distance" => shift.original_distance,
-    #     "original_distances" => shift.original_distances,
-    #     "move_distance" => shift.move_distance,
-    #     "move_distances" => shift.move_distances,
-    #     "accept" => shift.accept,
-    #     "reject" => shift.reject,
-    #     "improvements" => shift.improvements,
-    #     "worsens" => shift.worsens,
-    #     "sideways" => shift.sideways,
-    #     "total" => shift.total
-    # )
-
-    # println(_debug)
-
     # Selecting route
     shift.route = rand(routes)
     local timeout = 0

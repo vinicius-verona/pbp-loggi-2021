@@ -46,8 +46,8 @@ main(ARGS) = begin
 
 end
 
-# if (!isinteractive())
-#     main(ARGS)
-# end
+if (!isinteractive())
+    main(ARGS)
+end
 
-main(["-i", "data/input/train/df-0/cvrp-0-df-0.json", "-s", "1"])
+# main(["-i", "data/input/train/df-0/cvrp-0-df-0.json", "-s", "1"])

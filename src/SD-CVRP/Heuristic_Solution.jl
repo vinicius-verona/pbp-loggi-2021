@@ -6,6 +6,8 @@ using Neighborhood
 using Dates
 using Random
 
+using Debugger
+
 export IlsController
 mutable struct IlsController
 
@@ -63,10 +65,10 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     local shift_4  = Shift(4)
     
     # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4]
-    local moves::Array{Neighbor, 1} = [shift_1, shift_2, shift_3, shift_4]
+    # local moves::Array{Neighbor, 1} = [shift_1, shift_2, shift_3, shift_4]
     # local moves::Array{Neighbor, 1} = [shift_1, shift_2]
-    # local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
-                                    #    shift_1, shift_2, shift_3, shift_4]
+    local moves::Array{Neighbor, 1} = [swap_1x1, swap_2x2, swap_3x3, swap_4x4,
+                                       shift_1, shift_2, shift_3, shift_4]
 
     if (ils_controller === nothing)
         if (slot_deliveries === nothing)

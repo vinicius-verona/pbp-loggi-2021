@@ -11,6 +11,8 @@ using Heuristic_Solution: ils
 using Verifier
 using Random
 
+using Debugger
+
 # Global variables used to controll solver
 SLOT_LENGTH     = 100
 SLOT_COUNTER    = 0
@@ -178,14 +180,14 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
         # solution = greedySolution(instance, auxiliar, model)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution=solution)
 
-        local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+        local time = Int(round((18e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
         solution = ils(auxiliar, solution, deliveries; execution_time=time)
 
     else
         # solution = greedySolution(instance, auxiliar, model)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries)
 
-        local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+        local time = Int(round((18e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
         solution = ils(auxiliar, solution, deliveries; execution_time=time)
     end
 
