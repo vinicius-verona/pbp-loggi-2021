@@ -95,11 +95,16 @@ function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries
     linkCopy!(editable_deliveries, editable_solution)
     
     ils_controller.initial_timestamp = Dates.now()
+    # local counter = 0
     
     while true
         
         Dates.now() - ils_controller.initial_timestamp > Millisecond(ils_controller.duration) ? break : nothing
-        
+        # counter += 1
+        # if (counter) == 50000
+            # break
+        # end
+
         for i = 1:rna_controller.perturbance
             Dates.now() - ils_controller.initial_timestamp > Millisecond(ils_controller.duration) ? break : nothing
             

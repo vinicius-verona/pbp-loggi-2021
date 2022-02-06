@@ -540,7 +540,7 @@ In this context, deliveries must be the one to be synced to destiny.
 @inline function copyRoute!(source::Array{Route, 1}, deliveries::Array{Delivery, 1}, destiny::Array{Route, 1})
 
     local length_source = length(source)
-
+    
     for i in destiny
         empty!(i.deliveries)
     end
@@ -552,6 +552,12 @@ In this context, deliveries must be the one to be synced to destiny.
             local route = Route(i, Array{Delivery,1}(undef, length(source[i].deliveries)), 0.0, source[i].depot)
             copyRoute!(source[i], deliveries, route)
             insert!(destiny, i, route)
+        end
+    end
+
+    if (length(destiny) > length_source)
+        while (isassigned(destiny, length_source + 1))
+            deleteat!(destiny, length_source + 1)
         end
     end
 
@@ -567,6 +573,10 @@ In this context, deliveries must be the one to be synced to destiny.
 @inline function copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)
     
     local size = length(source.deliveries)
+
+    if (size == 0)
+        throw("Route with 0 deliveries -> $(source)")
+    end
     
     destiny.index    = source.index
     destiny.distance = source.distance
