@@ -8,16 +8,15 @@ using Cluster_Instance: train
 using Initial_Solution: greedySolution
 using ClarkeWright: clarkeWrightSolution
 using Heuristic_Solution: ils
+using LKH_3: lkh
 using Verifier
 using Random
 using Output
 
-using Debugger
-
 # Global variables used to controll solver
-SLOT_LENGTH     = 100
-SLOT_COUNTER    = 0
-LAST_SLOT       = false
+SLOT_LENGTH = 100
+SLOT_COUNTER = 0
+LAST_SLOT = false
 INSTANCE_LENGTH = 0
 
 # Execution Structures
@@ -30,12 +29,12 @@ mutable struct Argument
     k_nearest::Int64
 
     Argument(attributes...) = begin
-        local seed  = 0
+        local seed = 0
         local input = ""
         local execution_time = 0
         local k_nearest = 0
 
-        isdefined(attributes, 1) ? seed  = attributes[1] : nothing
+        isdefined(attributes, 1) ? seed = attributes[1] : nothing
         isdefined(attributes, 2) ? input = attributes[2] : nothing
         isdefined(attributes, 3) ? execution_time = attributes[3] : nothing
         isdefined(attributes, 4) ? k_nearest = attributes[4] : nothing
@@ -62,6 +61,9 @@ mutable struct ExecStatistic
     solver_initial_timestamp::DateTime # Solver Solution timestamp
     solver_completion_timestamp::DateTime # Solver Solution timestamp
 
+    lkh_initial_timestamp::DateTime # Solver + LKH Solution timestamp
+    lkh_completion_timestamp::DateTime # Solver + LKH Solution timestamp
+
 end
 
 # CVRP Program
@@ -71,7 +73,7 @@ function cvrp(arguments::Argument)
     Random.seed!(arguments.seed)
 
     println("\n======> Start loading instance data")
-    local instance  = loadInstance(arguments.input)
+    local instance = loadInstance(arguments.input)
     local auxiliars = loadDistanceMatrix(instance.name)
     println("=> Instance name     : ", instance.name)
     println("=> Instance region   : ", instance.region)
@@ -82,7 +84,8 @@ function cvrp(arguments::Argument)
     # Update INSTANCE_LENGTH variable
     # global SLOT_LENGTH = length(instance.deliveries)
     global INSTANCE_LENGTH = length(instance.deliveries)
-    local execution_stats = ExecStatistic(now(), now(), now(), now(), now(), now(), now(), now(), now(), now())
+    local execution_stats = ExecStatistic(now(), now(), now(), now(), now(),
+        now(), now(), now(), now(), now(), now(), now())
 
     # Clustering instance
     # println("\n======> Start clustering instance")
@@ -131,15 +134,27 @@ function cvrp(arguments::Argument)
     execution_stats.solver_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.solver_initial_timestamp)
 
-    local solver_solution = solve(instance, auxiliars; model=nothing)
+    local solver_solution = solve(instance, auxiliars)
     execution_stats.solver_completion_timestamp = now()
-    println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, solver_solution)), " routes")
+    println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, solver_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.solver_completion_timestamp)
+
+    # Slotted version solver Solution
+    println("\n======> Start Pos-Heuristic reordering solution")
+    execution_stats.lkh_initial_timestamp = now()
+    println("=> Start timestamp : ", execution_stats.lkh_initial_timestamp)
+
+    local lkh_solution = lkh(deepcopy(solver_solution), auxiliars)
+    execution_stats.lkh_completion_timestamp = now()
+    println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, lkh_solution)), " routes")
+    println("=> Compl. timestamp: ", execution_stats.lkh_completion_timestamp)
+
 
     println("\n======> Results (Distance in KM)")
     # println("Greedy   : ", sum(map(x -> x.distance, greedy_solution)) / 1000)
     # println("Heuristic: ", sum(map(x -> x.distance, heuristic_solution)) / 1000)
     println("Solved: ", sum(map(x -> x.distance, solver_solution)) / 1000)
+    println("LKH-3 : ", sum(map(x -> x.distance, lkh_solution)) / 1000)
     println()
 
     # Verify
@@ -148,11 +163,12 @@ function cvrp(arguments::Argument)
     # println("\n\n======> Verifying Heuristic Solution <======")
     # verify(instance=instance, auxiliar=auxiliars, solution=heuristic_solution)
     println("\n\n======> Verifying Solver Solution <======")
-    verify(auxiliar=auxiliars, solution=solver_solution)
+    verify(auxiliar = auxiliars, solution = solver_solution)
+    verify(auxiliar = auxiliars, solution = lkh_solution)
     println()
 
     # Generate Output
-    generateOutput(instance, solver_solution; algorithm="Slot")
+    generateOutput(instance, solver_solution; algorithm = "Slot")
 
 end
 
@@ -163,7 +179,7 @@ Apply initial algorithm and then a heuristic method in order to solve DCVRP.
 * `Clarke-Wright` - Initial Algorithm
 * `Iterated Local-Search (ILS)` - Heuristic Algorithm (improvement phase)
 """
-function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route, 1}}=nothing, model)
+function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route,1}} = nothing)
 
     global SLOT_COUNTER += 1
     local current_slot = SLOT_COUNTER * SLOT_LENGTH
@@ -173,17 +189,15 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
         global LAST_SLOT = true
     end
 
-    local deliveries = instance.deliveries[1 : current_slot]
+    local deliveries = instance.deliveries[1:current_slot]
 
     if (solution !== nothing)
-        # solution = greedySolution(instance, auxiliar, model)
-        solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution=solution)
+        solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution = solution)
 
         local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
         solution = ils(auxiliar, solution, deliveries; execution_time=time)
 
     else
-        # solution = greedySolution(instance, auxiliar, model)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries)
 
         local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
@@ -196,7 +210,7 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
         return solution
     end
 
-    return solve(instance, auxiliar; solution=solution, model=model)
+    return solve(instance, auxiliar; solution = solution)
 
 end
 

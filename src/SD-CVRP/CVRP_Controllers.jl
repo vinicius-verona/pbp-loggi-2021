@@ -47,10 +47,6 @@ Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it 
 """
 @inline function pushDelivery!(cvrp_aux::CvrpAuxiliars, route::Route, d::Delivery, pos::Int64 = -1)
 
-    # if (d.fixed && route.index != d.route_index)
-    #     throw("Cannot push a fixed delivery into another route. Delivery ID: $(d.id)")
-    # end
-
     if (pos == -1)
         pos = length(route.deliveries)
     end

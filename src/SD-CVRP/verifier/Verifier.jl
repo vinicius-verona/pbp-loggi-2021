@@ -40,7 +40,7 @@ function verify(;auxiliar::CvrpAuxiliars, solution::Array{Route, 1})
     end
     
     println("======> Start verifying sum  of delivery sizes")
-    passed, error = verifySumSizes(auxiliar, solution)
+    passed, error = verifySumSizes(solution)
     if (passed)
         println("\t-> Status: [PASSED]")
     else
@@ -165,7 +165,7 @@ end
 """
 Verify if sum of delivery sizes per route does not exceed capacity.
 """
-function verifySumSizes(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::Tuple{Bool,String}
+function verifySumSizes(solution::Array{Route, 1})::Tuple{Bool,String}
 
     local response = true
     local error = ""
@@ -206,11 +206,8 @@ function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::
             local sum = 0
             for i = 1:length(route.deliveries)-1
                 sum += getDistance(auxiliar, route.deliveries[i], route.deliveries[i+1])
-                println("From $(route.deliveries[i].index) to $(route.deliveries[i+1].index) sums $(getDistance(auxiliar, route.deliveries[i], route.deliveries[i+1]))")
             end
 
-            println("SUM: $sum - ORIGINAL SUM: $(route.distance)")
-            println()
             return response, error
         end
     end
@@ -220,36 +217,3 @@ function verifySumDistance(auxiliar::CvrpAuxiliars, solution::Array{Route, 1})::
 end
 
 end # module
-
-#=
-function verify(;input::String="")
-
-    println("\n======> Start loading instance data")
-    local instance  = loadInstance(input)
-    local auxiliars = loadDistanceMatrix(instance.name)
-    println("=> Instance name     : ", instance.name)
-    println("=> Instance region   : ", instance.region)
-    println("=> Instance capacity : ", instance.capacity)
-    println("=> Instance # of deliveries   : ", length(instance.deliveries))
-    println("=> Instance min # of vehicles : ", instance.min_number_routes, " routes")
-    
-    
-    println("\n======> Start loading solution data")
-    println("\n======> Start verifying double  delivery assignment")
-    println("\n======> Start verifying lack of delivery assignment")
-    println("\n======> Start verifying sum  of delivery sizes")
-    println("\n======> Start verifying sum  of delivery distances")
-
-end
-
-
-if abspath(PROGRAM_FILE) == @__FILE__
-
-    if (length(ARGS) === 0 || ARGS[1] === "" || match(r".+\.json", ARGS[1]) === nothing)
-        throw("An input JSON file has not been passed as argument! Syntax: julia verifier.jl path/to/instance.json")
-    end
-
-    verify(input=ARGS[1])
-
-end
-=#

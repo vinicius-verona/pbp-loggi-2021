@@ -1,0 +1,31 @@
+
+======> Start loading instance data
+=> Instance name     : cvrp-0-df-89
+=> Instance region   : df-0
+=> Instance capacity : 180
+=> Instance # of deliveries   : 1199
+=> Instance min # of vehicles : 36 routes
+
+======> Start Slotted solver solution
+=> Start timestamp : 2022-02-06T13:34:16.268
+=> # of vehicles   : 38 routes
+=> Compl. timestamp: 2022-02-06T13:34:16.674
+
+======> Results (Distance in KM)
+Solved: 2323.6965999999998
+
+
+
+======> Verifying Solver Solution <======
+======> Start verifying if every route starts and end in depot
+	-> Status: [PASSED]
+======> Start verifying lack of delivery assignment
+	-> Status: [PASSED]
+======> Start verifying double  delivery assignment
+	-> Status: [PASSED]
+======> Start verifying sum  of delivery sizes
+	-> Status: [PASSED]
+======> Start verifying sum  of delivery distances
+	-> Status: [PASSED]
+
+

@@ -4,10 +4,6 @@ using CVRP_Controllers: getDistance, pushDelivery!, deleteDelivery!,
                         getStringSize, getStringDistance, getInsertionDistance,
                         deleteRoute!
 
-
-using JSON # DEBUG
-using OrderedCollections # DEBUG
-
 export Shift
 mutable struct Shift <: Neighbor
     
@@ -74,18 +70,13 @@ mutable struct Shift <: Neighbor
 
 end
 
-# _debug = nothing
-
 export execute
 function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1}, deliveries::Array{Delivery, 1}) # Delta evaluation
-
-    # global _debug = deepcopy(routes)
 
     # Update some statistics regarding the move execution
     shift.hasMove = false
 
     # Reset values
-    # shift = Shift(shift.shift_size)
     shift.route      = nothing
     shift.routes     = Array{Delivery, 1}(undef, shift.shift_size)
     shift.removal_positions   = zeros(Int64, shift.shift_size)
@@ -201,22 +192,9 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
 
         deleteDelivery!(cvrp_aux, shift.route, delivery.visiting_index, delivery.visiting_index)
         pushDelivery!(cvrp_aux, shift.routes[i], delivery, insertion_position)
-        move_routes_distance += shift.routes[i].distance # If the route has already been summed, remove value before sum
+        move_routes_distance += shift.routes[i].distance
         
     end
-
-    # # Debug
-    # local _original_routes_distance = 0
-    # for i in route_indexes
-    #     _original_routes_distance += _debug[i].distance
-    # end
-    # if (abs(_original_routes_distance - original_routes_distance) > 1e-5)
-    #     throw("Diff")
-    # end
-    # #######
-
-    # println("Rotas: ", route_indexes, " - Length of routes: ", length(shift.routes), " - Routes: ", map(x->x.index, shift.routes))
-    # println("insert_routes_index: ", shift.insert_routes_index)
 
     # Update removal route distance
     shift.move_distance = shift.route.distance
@@ -224,13 +202,6 @@ function execute(cvrp_aux::CvrpAuxiliars, shift::Shift, routes::Array{Route, 1},
     # Update some statistics regarding the move execution
     shift.hasMove = true
     shift.total += 1
-
-    # println("Move Dist: $(shift.move_distance)")
-    # println("Move Dists: $(move_routes_distance)")
-
-    # println("Orig Dist: $(shift.original_distance)")
-    # println("Orig Dists: $(original_routes_distance)")
-    # println((shift.move_distance + move_routes_distance) - (shift.original_distance + original_routes_distance))
 
     # Calculate delta value
     return (shift.move_distance + move_routes_distance) - (shift.original_distance + original_routes_distance)

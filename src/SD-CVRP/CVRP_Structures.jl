@@ -139,6 +139,7 @@ mutable struct Route
 
             insert!(deliveries, 1, depot)
             insert!(deliveries, length(deliveries) + 1, deepcopy(depot))
+            deliveries[end].visiting_index = length(deliveries) + 1
         end : throw("A Depot must be passed as either a Delivery or a Point")
         
         isdefined(attributes, 5) ? capacity = attributes[5] : nothing
