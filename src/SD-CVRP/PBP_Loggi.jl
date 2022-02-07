@@ -12,6 +12,8 @@ using LKH_3: lkh
 using Verifier
 using Random
 using Output
+using Profile
+using ProfileSVG
 
 # Global variables used to controll solver
 SLOT_LENGTH = 100
@@ -46,18 +48,6 @@ end
 
 mutable struct ExecStatistic
 
-    train_initial_timestamp::DateTime
-    train_completion_timestamp::DateTime
-
-    greedy_initial_timestamp::DateTime # Greedy Solution timestamp
-    greedy_completion_timestamp::DateTime # Greedy Solution timestamp
-
-    cw_initial_timestamp::DateTime # Clarke-Wright Solution timestamp
-    cw_completion_timestamp::DateTime # Clarke-Wright Solution timestamp
-
-    heuristic_initial_timestamp::DateTime # Heuristic Solution timestamp
-    heuristic_completion_timestamp::DateTime # Heuristic Solution timestamp
-
     solver_initial_timestamp::DateTime # Solver Solution timestamp
     solver_completion_timestamp::DateTime # Solver Solution timestamp
 
@@ -68,9 +58,13 @@ end
 
 # CVRP Program
 export cvrp
-function cvrp(arguments::Argument)
+function cvrp(arguments::Argument; DEBUG::Bool=false)
 
     Random.seed!(arguments.seed)
+
+    #-------------------------------------#
+    #         Instance Processing         #
+    #-------------------------------------#
 
     println("\n======> Start loading instance data")
     local instance = loadInstance(arguments.input)
@@ -81,65 +75,31 @@ function cvrp(arguments::Argument)
     println("=> Instance # of deliveries   : ", length(instance.deliveries))
     println("=> Instance min # of vehicles : ", instance.min_number_routes, " routes")
 
+    #----------------------------------#
+    #         Instance Solving         #
+    #----------------------------------#
+
     # Update INSTANCE_LENGTH variable
-    # global SLOT_LENGTH = length(instance.deliveries)
     global INSTANCE_LENGTH = length(instance.deliveries)
-    local execution_stats = ExecStatistic(now(), now(), now(), now(), now(),
-        now(), now(), now(), now(), now(), now(), now())
+    local execution_stats = ExecStatistic(now(), now(), now(), now())
 
-    # Clustering instance
-    # println("\n======> Start clustering instance")
-    # execution_stats.train_initial_timestamp = now()
-    # println("=> Start timestamp : ", execution_stats.train_initial_timestamp)
-
-    # local model = train(instance.region)
-    # execution_stats.train_completion_timestamp = now()
-    # println("=> # of clusters   : ", length(model.centroids), " centroids")
-    # println("=> Compl. timestamp: ", execution_stats.train_completion_timestamp)
-
-    # Greedy Solution
-    # println("\n======> Start greedy solution")
-    # execution_stats.greedy_initial_timestamp = now()
-    # println("=> Start timestamp : ", execution_stats.greedy_initial_timestamp)
-
-    # local greedy_solution = greedySolution(deepcopy(instance), auxiliars, model)
-    # execution_stats.greedy_completion_timestamp = now()
-    # println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, greedy_solution)), " routes")
-    # println("=> Compl. timestamp: ", execution_stats.greedy_completion_timestamp)
-
-    # Clarke-Wright Solution
-    # println("\n======> Start Clarke-Wright solution")
-    # execution_stats.cw_initial_timestamp = now()
-    # println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
-
-    # local cw_solution = clarkeWrightSolution(instance, auxiliars, Int(round(length(instance.deliveries)*0.2, RoundDown)))
-    # local cw_solution = clarkeWrightSolution(instance, auxiliars, length(instance.deliveries))
-    # execution_stats.cw_completion_timestamp = now()
-    # println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, cw_solution)), " routes")
-    # println("=> Compl. timestamp: ", execution_stats.cw_completion_timestamp)
-
-    # Heuristic Solution
-    # println("\n======> Start Heuristic solution")
-    # execution_stats.heuristic_initial_timestamp = now()
-    # println("=> Start timestamp : ", execution_stats.heuristic_initial_timestamp)
-
-    # local heuristic_solution = ils(auxiliars, cw_solution, Int(round(length(instance.deliveries)*0.2, RoundDown)))
-    # local heuristic_solution = ils(auxiliars, cw_solution, deepcopy(instance.deliveries))
-    # execution_stats.heuristic_completion_timestamp = now()
-    # println("=> # of vehicles   : ", length(filter!(r->length(r.deliveries) > 2, heuristic_solution)), " routes")
-    # println("=> Compl. timestamp: ", execution_stats.heuristic_completion_timestamp)
-
-    # Slotted version solver Solution
+    # Slot version solver solution
     println("\n======> Start Slotted solver solution")
     execution_stats.solver_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.solver_initial_timestamp)
 
-    local solver_solution = solve(instance, auxiliars)
+    local solver_solution::Array{Route, 1} = []
+    if (DEBUG) 
+        solver_solution = @profile solve(instance, auxiliars)
+    else
+        solver_solution = solve(instance, auxiliars)
+    end
+
     execution_stats.solver_completion_timestamp = now()
     println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, solver_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.solver_completion_timestamp)
 
-    # Slotted version solver Solution
+    # LKH + slot version solver solution
     println("\n======> Start Pos-Heuristic reordering solution")
     execution_stats.lkh_initial_timestamp = now()
     println("=> Start timestamp : ", execution_stats.lkh_initial_timestamp)
@@ -149,35 +109,49 @@ function cvrp(arguments::Argument)
     println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, lkh_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.lkh_completion_timestamp)
 
+    #----------------------------------#
+    #         Instance Results         #
+    #----------------------------------#
 
     println("\n======> Results (Distance in KM)")
-    # println("Greedy   : ", sum(map(x -> x.distance, greedy_solution)) / 1000)
-    # println("Heuristic: ", sum(map(x -> x.distance, heuristic_solution)) / 1000)
     println("Solved: ", sum(map(x -> x.distance, solver_solution)) / 1000)
     println("LKH-3 : ", sum(map(x -> x.distance, lkh_solution)) / 1000)
     println()
 
-    # Verify
-    # println("\n\n======> Verifying Initial Solution <======")
-    # verify(instance=instance, auxiliar=auxiliars, solution=cw_solution)
-    # println("\n\n======> Verifying Heuristic Solution <======")
-    # verify(instance=instance, auxiliar=auxiliars, solution=heuristic_solution)
+    #-----------------------------------#
+    #         Solving Verifying         #
+    #-----------------------------------#
+
+    # Verify solution
     println("\n\n======> Verifying Solver Solution <======")
     verify(auxiliar = auxiliars, solution = solver_solution)
+    println("\n\n======> Verifying Solver + LKH Solution <======")
     verify(auxiliar = auxiliars, solution = lkh_solution)
     println()
 
-    # Generate Output
-    generateOutput(instance, solver_solution; algorithm = "Slot")
+    # Generate output
+    # generateOutput(instance, lkh_solution; algorithm = "Slot", path="$(@__DIR__)/../../data/output/ILS/")
+    # generateOutput(instance, lkh_solution; algorithm = "lkh", path="$(@__DIR__)/../../data/output/LKH/")
+
+    #-------------------------------------#
+    #             DEBUG STATS             #
+    #-------------------------------------#
+
+    if (DEBUG)
+        local name = "$(@__DIR__)/../../data/output/DEBUG/$(instance.name)"
+        Profile.print(open("$name.txt", "w"), format=:flat)
+        ProfileSVG.save("$name.svg")
+    end
 
 end
 
 
 """
 Apply initial algorithm and then a heuristic method in order to solve DCVRP.
+
 **Algorithms:**
 * `Clarke-Wright` - Initial Algorithm
-* `Iterated Local-Search (ILS)` - Heuristic Algorithm (improvement phase)
+* `Iterated Local-Search (ILS)` - Heuristic Algorithm (improvement step)
 """
 function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route,1}} = nothing)
 
@@ -230,6 +204,7 @@ function displayHelp()
     print("|> [ --help   → -h ]  |>  Not Required  |> Display this menu                         |\n")
     print("|> [ --seed   → -s ]  |>  Not Required  |> Set seed used                             |\n")
     print("|> [ --input  → -i ]  |>    Required    |> Set instance used                         |\n")
+    print("|> [ --DEBUG       ]  |>  Not Required  |> Set debug mode                            |\n")
     print("|                                                                                    |\n")
     print(" ------------------------------------------------------------------------------------\n\n")
 

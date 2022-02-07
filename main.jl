@@ -9,7 +9,7 @@ using PBP_Loggi
 """
 main(ARGS) = begin
 
-    let args = ARGS, arguments = Argument()
+    let args = ARGS, arguments = Argument(), debug=false
 
         if (length(args) <= 3)
             displayHelp()
@@ -18,20 +18,24 @@ main(ARGS) = begin
         for i = 1 : length(args)
             local argument = lowercase(args[i])
 
-            if (argument == "-s" || arguments == "--seed")
+            if (argument == "-s" || argument == "--seed")
                 arguments.seed = parse(Int64, args[i+1])
                 i += 1
 
-            elseif (argument == "-i" || arguments == "--input")
+            elseif (argument == "-i" || argument == "--input")
                 arguments.input = args[i+1]
                 i += 1
 
-            elseif (argument == "-t" || arguments == "--timer")
+            elseif (argument == "-t" || argument == "--timer")
                 arguments.execution_time = parse(Int64, args[i+1])
                 i += 1
 
-            elseif (argument == "-k" || arguments == "--k-near")
+            elseif (argument == "-k" || argument == "--k-near")
                 arguments.k_nearest = parse(Int64, args[i+1])
+                i += 1
+
+            elseif (argument == "--DEBUG" || argument == "--debug")
+                debug = true
                 i += 1
             end
         end
@@ -40,7 +44,7 @@ main(ARGS) = begin
             throw("An input JSON file has not been passed as argument! See help using '-h' argument for more information")
         end
 
-        cvrp(arguments)
+        cvrp(arguments; DEBUG=debug)
 
     end
 

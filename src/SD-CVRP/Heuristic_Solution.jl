@@ -6,8 +6,6 @@ using Neighborhood
 using Dates
 using Random
 
-using Debugger
-
 export IlsController
 mutable struct IlsController
 
@@ -42,11 +40,9 @@ end
 export ils
 function ils(cvrp_aux::CvrpAuxiliars, solution::Array{Route, 1}, slot_deliveries::Array{Delivery, 1}; ils_controller::Controller{IlsController} = nothing, rna_controller::Controller{RnaController} = nothing, execution_time::Int64 = Int(6e4))
 
-    if (length(solution) == 1)
+    if (!isassigned(solution, 2))
         @warn "There is only one route, therefore, as there is no intra-route neighbors (yet), the heuristic will not execute."
         return solution
-    elseif (length(solution) <= 5)
-        @warn "There are too few routes, there is a chance the neighbors will take too long selecting routes. Consider increasing the number of routes."
     end
 
     local editable_deliveries = deepcopy(slot_deliveries)
