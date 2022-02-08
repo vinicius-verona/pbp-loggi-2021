@@ -11,8 +11,9 @@ main(ARGS) = begin
 
     let args = ARGS, arguments = Argument(), debug=false
 
-        if (length(args) <= 3)
+        if (length(args) < 2)
             displayHelp()
+            exit()
         end
 
         for i = 1 : length(args)
@@ -34,8 +35,12 @@ main(ARGS) = begin
                 arguments.k_nearest = parse(Int64, args[i+1])
                 i += 1
 
-            elseif (argument == "--DEBUG" || argument == "--debug")
+            elseif (argument == "--DEBUG")
                 debug = true
+                i += 1
+
+            elseif (argument == "--help" || argument == "-h")
+                displayHelp()
                 i += 1
             end
         end
