@@ -1,0 +1,48 @@
+
+======> Start loading instance data
+=> Instance name     : cvrp-0-pa-89
+=> Instance region   : pa-0
+=> Instance capacity : 180
+=> Instance # of deliveries   : 358
+=> Instance min # of vehicles : 11 routes
+
+======> Start Slotted solver solution
+=> Start timestamp : 2022-02-07T02:19:57.608
+=> # of vehicles   : 11 routes
+=> Compl. timestamp: 2022-02-07T02:36:45.481
+
+======> Start Pos-Heuristic reordering solution
+=> Start timestamp : 2022-02-07T02:36:45.481
+=> # of vehicles   : 11 routes
+=> Compl. timestamp: 2022-02-07T02:36:47.544
+
+======> Results (Distance in KM)
+Solved: 996.6751999907666
+LKH-3 : 887.9798000000001
+
+
+
+======> Verifying Solver Solution <======
+======> Start verifying if every route starts and end in depot
+	-> Status: [PASSED]
+======> Start verifying lack of delivery assignment
+	-> Status: [PASSED]
+======> Start verifying double  delivery assignment
+	-> Status: [PASSED]
+======> Start verifying sum  of delivery sizes
+	-> Status: [PASSED]
+======> Start verifying sum  of delivery distances
+	-> Status: [PASSED]
+
+======> Start verifying if every route starts and end in depot
+	-> Status: [PASSED]
+======> Start verifying lack of delivery assignment
+	-> Status: [PASSED]
+======> Start verifying double  delivery assignment
+	-> Status: [PASSED]
+======> Start verifying sum  of delivery sizes
+	-> Status: [PASSED]
+======> Start verifying sum  of delivery distances
+	-> Status: [PASSED]
+
+

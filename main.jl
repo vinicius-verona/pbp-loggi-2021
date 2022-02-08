@@ -1,5 +1,6 @@
-push!(LOAD_PATH, "src/")
-using PBP_loggi
+push!(LOAD_PATH, "src/SD-CVRP")
+push!(LOAD_PATH, "src/SD-CVRP/verifier/")
+using PBP_Loggi
 
 """
     main(ARGS)
@@ -7,8 +8,8 @@ using PBP_loggi
 **`Author:`** Vinicius Gabriel Angelozzi Verona de Resende
 """
 main(ARGS) = begin
-    
-    let args = ARGS, arguments = Argument()
+
+    let args = ARGS, arguments = Argument(), debug=false
 
         if (length(args) <= 3)
             displayHelp()
@@ -17,32 +18,41 @@ main(ARGS) = begin
         for i = 1 : length(args)
             local argument = lowercase(args[i])
 
-            if (argument == "-s" || arguments == "--seed")
+            if (argument == "-s" || argument == "--seed")
                 arguments.seed = parse(Int64, args[i+1])
-                i += 1 
-                
-            elseif (argument == "-i" || arguments == "--input")
+                i += 1
+
+            elseif (argument == "-i" || argument == "--input")
                 arguments.input = args[i+1]
-                i += 1 
-                
-            elseif (argument == "-t" || arguments == "--timer")
+                i += 1
+
+            elseif (argument == "-t" || argument == "--timer")
                 arguments.execution_time = parse(Int64, args[i+1])
-                i += 1 
-                
-            elseif (argument == "-k" || arguments == "--k-near")
+                i += 1
+
+            elseif (argument == "-k" || argument == "--k-near")
                 arguments.k_nearest = parse(Int64, args[i+1])
-                i += 1 
+                i += 1
+
+            elseif (argument == "--DEBUG" || argument == "--debug")
+                debug = true
+                i += 1
             end
         end
 
         if (arguments.input === "" || match(r".+\.json", arguments.input) === nothing)
             throw("An input JSON file has not been passed as argument! See help using '-h' argument for more information")
         end
-        
-        cvrp(arguments)
+
+        println(debug)
+        cvrp(arguments; DEBUG=debug)
 
     end
 
 end
 
-main(ARGS)
+if (!isinteractive())
+    main(ARGS)
+end
+
+# main(["-i", "data/input/train/df-0/cvrp-0-df-0.json", "-s", "1", "--DEBUG"])
