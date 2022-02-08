@@ -14,7 +14,7 @@ function fixAssignment!(routes::Array{Route, 1}, deliveries::Array{Delivery, 1})
     foreach(route -> begin
         map(delivery -> begin
             delivery.fixed = true
-            
+
             if (!occursin(lowercase(delivery.id), "depot"))
                 deliveries[delivery.index].fixed = true
             end
@@ -57,14 +57,14 @@ Insert delivery `d` into `route` on position `pos`. If `pos` is not defined, it 
 
     local previous = isassigned(route.deliveries, pos - 1) ? route.deliveries[pos-1] : nothing; # Previous Delivery
     local next = isassigned(route.deliveries, pos) ? route.deliveries[pos] : nothing; # Next Delivery
-    
+
     previous !== nothing ? route.distance += getDistance(cvrp_aux, previous, d) : nothing
     next !== nothing ? route.distance += getDistance(cvrp_aux, d, next) : nothing
-    
-    if (previous !== nothing && next !== nothing) 
+
+    if (previous !== nothing && next !== nothing)
         route.distance -= getDistance(cvrp_aux, previous, next)
     end
-    
+
     insert!(route.deliveries, pos, d)
 
     local counter = pos
@@ -91,7 +91,7 @@ Insert string of delivery into `route` after last position of `route`.
             pushDelivery!(cvrp_aux, route, delivery, start)
             start += 1
         end, string[start_position:end_position])
-    
+
     else
         foreach(delivery -> begin
             pushDelivery!(cvrp_aux, route, delivery)
@@ -120,13 +120,13 @@ Remove the selected string of deliveries from `route`. The string starts at `idx
         @warn "Removing fixed deliveries from route."
     end
 
-    
+
     if (isassigned(route.deliveries, idx - 1) && isassigned(route.deliveries, limit + 1))
         route.distance += getDistance(cvrp_aux, route.deliveries[idx - 1], route.deliveries[limit + 1])
         route.distance -= getDistance(cvrp_aux, route.deliveries[idx - 1], route.deliveries[idx])
         route.distance -= getDistance(cvrp_aux, route.deliveries[limit], route.deliveries[limit + 1])
     end
-    
+
     route.free += getStringSize(route.deliveries[idx:limit])
     route.distance -= getStringDistance(cvrp_aux, route.deliveries[idx:limit])
     deleteat!(route.deliveries, idx:limit)
@@ -157,15 +157,15 @@ Insert a route on index `idx` from `routes`.
 @inline function insertRoute!(route::Route, idx::Int64, routes::Array{Route,1})
 
     insert!(routes, idx, route)
-    
+
     for i = idx:length(routes)
         routes[i].index = i
-        
+
         for j in routes[i].deliveries
             j.route_index = i
         end
     end
-    
+
     route.index = idx
     for i in route.deliveries
         i.route_index = idx
@@ -208,13 +208,13 @@ function getStringDistance(cvrp_aux::CvrpAuxiliars, string::Array{Delivery, 1})
 
     local value = 0
     local idx   = 0
-    
+
     for idx = 1 : length(string) - 1
         value += getDistance(cvrp_aux, string[idx], string[idx + 1])
     end
 
     return value
-    
+
 end
 
 export getStringSize
@@ -227,7 +227,7 @@ function getStringSize(string::Array{Delivery, 1})
 
     local value = 0
     local idx   = 0
-        
+
     for idx = 1 : length(string)
         value += string[idx].size
     end
@@ -259,11 +259,11 @@ If returned value is positive, the insertion is not profitable.
         local neighbor    = route.deliveries[idx]
 
         value += getDistance(cvrp_aux, predecessor, string[begin])
-        
+
         if (length(string) > 1)
             value += getStringDistance(cvrp_aux, string)
         end
-        
+
         if (neighbor !== nothing)
             value -= getDistance(cvrp_aux, predecessor, neighbor)
             value += getDistance(cvrp_aux, string[end], neighbor)
@@ -357,12 +357,12 @@ to insert `delivery`.
 **Types:**
 * `:Extremes` - Check both extremes insertion cost of a route.
 """
-findBestRoute(type::Symbol, cvrp_auxiliar::CvrpAuxiliars, routes::Array{Route, 1}, delivery::Delivery) = type == :Extremes ? 
+findBestRoute(type::Symbol, cvrp_auxiliar::CvrpAuxiliars, routes::Array{Route, 1}, delivery::Delivery) = type == :Extremes ?
     findBestRoute(Val(:Extremes), cvrp_auxiliar, routes, delivery) :
-    nothing # findBestRoute(Val(:FullRoute), cvrp_auxiliar, routes, delivery)
+    nothing
 
 """
-For the `:Extremes` analysis, for each route, the desired delivery is compared to be inserted either as 
+For the `:Extremes` analysis, for each route, the desired delivery is compared to be inserted either as
 the first serviced customer or the last.
 """
 @inline function findBestRoute(::Val{:Extremes}, cvrp_auxiliar::CvrpAuxiliars, routes::Array{Route, 1}, delivery::Delivery)
@@ -373,7 +373,7 @@ the first serviced customer or the last.
     foreach(r -> begin
 
         if (r.free - delivery.size >= 0)
-        
+
             # Depot -> new delivery
             local dist = getDistance(cvrp_auxiliar, r.deliveries[1], delivery)
             if (dist < distance)
@@ -389,7 +389,7 @@ the first serviced customer or the last.
                 position = length(r.deliveries) + 1
                 route = r
             end
-        
+
         end
 
     end, routes)
@@ -413,7 +413,7 @@ For a given delivery, find the closest route which has enough space to have `del
 
     for d in cvrp_auxiliar.k_adjacent
         for tuple in d
-            
+
             if (!isassigned(deliveries, tuple.second))
                 continue
             end
@@ -421,7 +421,7 @@ For a given delivery, find the closest route which has enough space to have `del
             local dlvr = deliveries[tuple.second]
             if (dlvr.route_index !== 0 && routes[dlvr.route_index].free - delivery.size >= 0)
                 if (dlvr.route_index !== delivery.route_index)
-                    response = dlvr.route_index 
+                    response = dlvr.route_index
                     return dlvr.route_index
                 end
             end
@@ -446,7 +446,7 @@ For a given delivery and route, find the best position to insert the delivery in
 
     local position = typemax(Int64)
     local distance = typemax(Float64)
-    
+
     for i = 1 : length(route.deliveries) - 1
         local local_distance = getDistance(cvrp_auxiliar, route.deliveries[i], delivery)
 
@@ -487,7 +487,7 @@ export copyRoute
 For a given route, create a copy and return it.
 """
 @inline function copyRoute(source::Route)
-    
+
     local length::Int64 = length(source.deliveries)
     local index::Int64  = source.index
     local deliveries::Array{Delivery, 1} = Array{Delivery, 1}(undef, length)
@@ -502,7 +502,7 @@ For a given route, create a copy and return it.
     end
 
     return Route(index, deliveries, distance, depot, capacity, free, centroid)
-    
+
 end
 
 export copyDelivery
@@ -512,7 +512,7 @@ export copyDelivery
 For a given delivery, create a copy and return it.
 """
 @inline function copyDelivery(source::Delivery)
-    
+
     local id::String   = source.id
     local point::Point = source.point
     local size::Int64  = source.size
@@ -536,7 +536,7 @@ In this context, deliveries must be the one to be synced to destiny.
 @inline function copyRoute!(source::Array{Route, 1}, deliveries::Array{Delivery, 1}, destiny::Array{Route, 1})
 
     local length_source = length(source)
-    
+
     for i in destiny
         empty!(i.deliveries)
     end
@@ -567,13 +567,13 @@ For a given route `source`, copy it to `destiny`.
 In this context, deliveries must be the one to be synced to destiny.
 """
 @inline function copyRoute!(source::Route, deliveries::Array{Delivery, 1}, destiny::Route)
-    
+
     local size = length(source.deliveries)
 
     if (size == 0)
         throw("Route with 0 deliveries -> $(source)")
     end
-    
+
     destiny.index    = source.index
     destiny.distance = source.distance
     destiny.depot    = source.depot
@@ -593,7 +593,7 @@ In this context, deliveries must be the one to be synced to destiny.
 
         destiny.deliveries[i].visiting_index = source.deliveries[i].visiting_index
         destiny.deliveries[i].route_index = destiny.index
-        
+
         if (idx !== 0)
             deliveries[idx].visiting_index = i
             deliveries[idx].route_index = destiny.index
@@ -619,7 +619,7 @@ export copyDelivery!
 For a given delivery `source`, copy info into `destiny`.
 """
 @inline function copyDelivery!(source::Delivery, destiny::Delivery)
-    
+
     destiny.id    = source.id
     destiny.point = source.point
     destiny.size  = source.size

@@ -6,7 +6,7 @@ using JSON
 
 
 mutable struct SolutionDelivery
-    
+
     id::String
     point::Point # Longitude and Latitude
     size::Int64
@@ -36,12 +36,12 @@ function generateOutput(instance::CvrpData, solution::Array{Route, 1}; algorithm
 
         push!(distribution, SolutionVehicle(i.depot.point, deliveries))
     end
-    
+
     local solution_dict = OrderedDict("name" => instance.name, "vehicles" => distribution)
 
     local json_solution = JSON.json(solution_dict)
     local output_path = path !== "" ? path : "$(@__DIR__)/../../data/output/"
-    
+
     if (additional !== "")
         write(open("$(output_path)$(instance.name)-$(algorithm)-$(additional).json", "w"), json_solution)
     else

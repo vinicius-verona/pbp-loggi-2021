@@ -12,13 +12,14 @@ using LKH_3: lkh
 using Verifier
 using Random
 using Output
+using Juno
 using Profile
 using ProfileSVG
 
 # Global variables used to controll solver
-SLOT_LENGTH = 100
+SLOT_LENGTH  = 100
 SLOT_COUNTER = 0
-LAST_SLOT = false
+LAST_SLOT    = false
 INSTANCE_LENGTH = 0
 
 # Execution Structures
@@ -27,14 +28,14 @@ mutable struct Argument
 
     seed::Int64
     input::String
-    execution_time::Int64
+    execution_time::Real
     k_nearest::Int64
 
     Argument(attributes...) = begin
         local seed = 0
         local input = ""
         local execution_time = 0
-        local k_nearest = 0
+        local k_nearest = 100
 
         isdefined(attributes, 1) ? seed = attributes[1] : nothing
         isdefined(attributes, 2) ? input = attributes[2] : nothing
@@ -68,7 +69,7 @@ function cvrp(arguments::Argument; DEBUG::Bool=false)
 
     println("\n======> Start loading instance data")
     local instance = loadInstance(arguments.input)
-    local auxiliars = loadDistanceMatrix(instance.name)
+    local auxiliars = loadDistanceMatrix(instance.name; k_nearest=arguments.k_nearest)
     println("=> Instance name     : ", instance.name)
     println("=> Instance region   : ", instance.region)
     println("=> Instance capacity : ", instance.capacity)
@@ -80,6 +81,8 @@ function cvrp(arguments::Argument; DEBUG::Bool=false)
     #----------------------------------#
 
     # Update INSTANCE_LENGTH variable
+    global SLOT_COUNTER = 0
+    global LAST_SLOT = false
     global INSTANCE_LENGTH = length(instance.deliveries)
     local execution_stats = ExecStatistic(now(), now(), now(), now())
 
@@ -89,10 +92,10 @@ function cvrp(arguments::Argument; DEBUG::Bool=false)
     println("=> Start timestamp : ", execution_stats.solver_initial_timestamp)
 
     local solver_solution::Array{Route, 1} = []
-    if (DEBUG) 
-        solver_solution = @profile solve(instance, auxiliars)
+    if (DEBUG)
+        solver_solution = @profile solve(instance, auxiliars; exec_time = arguments.execution_time)
     else
-        solver_solution = solve(instance, auxiliars)
+        solver_solution = solve(instance, auxiliars; exec_time = arguments.execution_time)
     end
 
     execution_stats.solver_completion_timestamp = now()
@@ -130,8 +133,8 @@ function cvrp(arguments::Argument; DEBUG::Bool=false)
     println()
 
     # Generate output
-    # generateOutput(instance, lkh_solution; algorithm = "Slot", path="$(@__DIR__)/../../data/output/ILS/")
-    # generateOutput(instance, lkh_solution; algorithm = "lkh", path="$(@__DIR__)/../../data/output/LKH/")
+    generateOutput(instance, lkh_solution; algorithm = "Slot", path="$(@__DIR__)/../../data/output/ILS/")
+    generateOutput(instance, lkh_solution; algorithm = "lkh", path="$(@__DIR__)/../../data/output/LKH/")
 
     #-------------------------------------#
     #             DEBUG STATS             #
@@ -153,7 +156,7 @@ Apply initial algorithm and then a heuristic method in order to solve DCVRP.
 * `Clarke-Wright` - Initial Algorithm
 * `Iterated Local-Search (ILS)` - Heuristic Algorithm (improvement step)
 """
-function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route,1}} = nothing)
+function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route,1}} = nothing, exec_time::Real=9e5)
 
     global SLOT_COUNTER += 1
     local current_slot = SLOT_COUNTER * SLOT_LENGTH
@@ -168,13 +171,13 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
     if (solution !== nothing)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution = solution)
 
-        local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+        local time = Int(round((exec_time * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
         solution = ils(auxiliar, solution, deliveries; execution_time=time)
 
     else
         solution = clarkeWrightSolution(instance, auxiliar, deliveries)
 
-        local time = Int(round((9e5 * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+        local time = Int(round((exec_time * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
         solution = ils(auxiliar, solution, deliveries; execution_time=time)
     end
 
@@ -184,7 +187,7 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
         return solution
     end
 
-    return solve(instance, auxiliar; solution = solution)
+    return solve(instance, auxiliar; solution = solution, exec_time = exec_time)
 
 end
 
