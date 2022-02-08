@@ -44,7 +44,6 @@ main(ARGS) = begin
             throw("An input JSON file has not been passed as argument! See help using '-h' argument for more information")
         end
 
-        println(debug)
         cvrp(arguments; DEBUG=debug)
 
     end
