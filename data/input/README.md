@@ -1,6 +1,34 @@
 # **Input Directory**
 > This directory is used to store instances in JSON format.
 ---
+
+## **Used Directory Tree**
+```
+- input
+ |- dev
+    |- df-0
+       |- instance.json
+
+    |- df-1
+    |- df-2
+    |- .
+    |- .
+    |- .
+
+ |- train
+    |- df-0
+       |- instance.json
+
+    |- df-1
+    |- df-2
+    |- .
+    |- .
+    |- .
+```
+PS: In order to execute an instance, a distance matrix zip must be present on [../DistanceMatrix](../DistanceMatrix/)
+
+---
+
 ## **Instance Schema**
 Accordingly to [Loggi Benchmark for Urban Deliveries (BUD)](https://github.com/loggi/loggibud) instance schema, all instances must be according to the following example.
 
