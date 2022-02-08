@@ -28,6 +28,7 @@ data/input/dev/*
 data/input/train/*
 *.gz
 *.zip
-# *.json
-# *.svg
-# *.txt
+*.json
+*.svg
+*.txt
+.vscode/*
