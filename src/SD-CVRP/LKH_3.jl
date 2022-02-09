@@ -9,8 +9,8 @@ using CVRP_Controllers: getStringDistance, getDistance
 For a given route, the visiting order and its possible variants are transformed into a TSP problem to execute the LKH algorithm
 
 **Parameters:**
-* `route` - Route used to generate the TSP matrix 
-* `cvrp`  - Problem data 
+* `route` - Route used to generate the TSP matrix
+* `cvrp`  - Problem data
 """
 function generateTSP(route::Route, cvrp::CvrpAuxiliars)
 
@@ -32,12 +32,12 @@ end
 For a given executed move, all routes altered are improved by applying the LKH algorithm.
 
 **Parameters:**
-* `move` - Move previously executed, e.g `InterRouteNDInsertion` 
+* `move` - Move previously executed, e.g `InterRouteNDInsertion`
 """
 function executeLKH(route::Route, cvrp::CvrpAuxiliars)
 
     local route_matrix = generateTSP(route, cvrp)
-    local optimal_tour, _ = solve_tsp(route_matrix) #; TIME_LIMIT=2)
+    local optimal_tour, _ = solve_tsp(route_matrix)
 
     return optimal_tour
 
@@ -59,7 +59,7 @@ function lkh(routes::Array{Route, 1}, cvrp::CvrpAuxiliars)
         if length(r.deliveries) <= 2
             continue
         end
-        
+
         local lkh_result = executeLKH(r, cvrp)
         local deliveries = Array{Delivery, 1}(undef, length(r.deliveries))
 
@@ -70,7 +70,7 @@ function lkh(routes::Array{Route, 1}, cvrp::CvrpAuxiliars)
         for i = hub_position:length(lkh_result)
             if lkh_result[i] != -1
                 local original_position = lkh_result[i]
-                
+
                 if (r.deliveries[original_position].index != 0)
                     local idx = counter
                     deliveries[idx] = r.deliveries[original_position]
@@ -89,7 +89,7 @@ function lkh(routes::Array{Route, 1}, cvrp::CvrpAuxiliars)
             for i = 1:hub_position
                 if lkh_result[i] != -1
                     local original_position = lkh_result[i]
-                    
+
                     if (r.deliveries[original_position].index != 0)
                         local idx = counter
                         deliveries[idx] = r.deliveries[original_position]
@@ -106,7 +106,7 @@ function lkh(routes::Array{Route, 1}, cvrp::CvrpAuxiliars)
 
         deliveries[end] = r.deliveries[end]
         local dist = getStringDistance(cvrp, deliveries)
-        
+
         # Compare distances in order to apply or reject
         if dist < r.distance
             r.distance = dist
