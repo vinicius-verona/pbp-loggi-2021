@@ -24,7 +24,7 @@ Options:
     [ --help   -> -h ]  |>  Not Required  |> Display this message
     [ --seed   -> -s ]  |>  Not Required  |> Set seed used on random selections
     [ --k-near -> -k ]  |>  Not Required  |> Set the number of stored delivery nearest adjacents
-    [ --timer  -> -k ]  |>  Not Required  |> Set the heuristic execution time (Milliseconds) - Default value: 0
+    [ --timer  -> -t ]  |>  Not Required  |> Set the heuristic execution time (Milliseconds) - Default value: 0
     [ --DEBUG        ]  |>  Not Required  |> Set debug mode (Profiling)
 
 
