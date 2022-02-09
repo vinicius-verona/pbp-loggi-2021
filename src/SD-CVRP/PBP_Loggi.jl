@@ -214,7 +214,7 @@ function displayHelp()
     println("    [ --help   -> -h ]  |>  Not Required  |> Display this message")
     println("    [ --seed   -> -s ]  |>  Not Required  |> Set seed used on random selections")
     println("    [ --k-near -> -k ]  |>  Not Required  |> Set the number of stored delivery nearest adjacents")
-    println("    [ --timer  -> -k ]  |>  Not Required  |> Set the heuristic execution time (Milliseconds)")
+    println("    [ --timer  -> -t ]  |>  Not Required  |> Set the heuristic execution time (Milliseconds)")
     println("    [ --DEBUG        ]  |>  Not Required  |> Set debug mode (Profiling)")
     println()
 
