@@ -28,7 +28,7 @@
 #   - type name
 #   - multiple values -> (Algorithm, value)
 
-module Comparison
+module ResultComparison
 
 using Dates
 
@@ -75,6 +75,23 @@ mutable struct Instance
 
 end
 
+_table_template(; cols_config::String = "", header::String = "", body)::String =
+"""
+ \\begin{table}[]
+     \\centering
+
+     \\begin{tabular}{$cols_config}
+         \\toprule
+         $header
+
+         \\hline
+         $body
+
+         \\bottomrule
+     \\end{tabular}
+ \\end{table}
+"""
+
 _calculate_gap(; best::Real, solution::Real) = (solution - best) / best
 
 # The classic CVRP solution parsed as `::Algorithm` must be the last element of `algorithms`
@@ -110,7 +127,8 @@ function _compare_values(algorithms::Array{Algorithm,1})::Array{Data,1}
 
 end
 
-function _parse_data(filename::String)::Instance
+export parse_data
+function parse_data(filename::String)::Instance
 
     local instance = Instance()
     local algorithms::Array{Algorithm,1} = []
@@ -123,7 +141,6 @@ function _parse_data(filename::String)::Instance
 
         pattern = r"([0-9]++\.?)++"
         instance.minimum = parse(Int64, match(pattern, file[7]).match)
-
 
         local line = 10
         local value = LAST_ALGORITHM + 5
@@ -155,4 +172,63 @@ function _parse_data(filename::String)::Instance
 
 end
 
+export to_latex
+function to_latex(instance::Instance)
+
+    local latex_content = [] # Each position is a comparison type
+
+    for comparison in instance.comparisons
+        local header = "Instance "
+        local cols_config = "c"
+        local body = "$(instance.name) "
+
+        local _header, _body, _cols = reduce(
+            (acc, value) -> begin
+                acc[1] *= ("& " * value.first * " ")
+                acc[2] *= "&  $(value.second) "
+                acc[3] *= "|c"
+                return acc
+            end, comparison.values, init=["","",""]
+        )
+
+        header *= _header
+        body *= _body
+        cols_config *= _cols
+        push!(latex_content, (header, cols_config, body))
+    end
+
+    return latex_content
+
+end
+
 end  # module Comparison
+
+
+function main()
+
+    local project_path = "$(@__DIR__)"
+    local results_path = "$project_path/data/output/"
+    local dirs = readdir(results_path)
+
+
+end
+
+
+# function test()
+#     content = ResultComparison.to_latex(ResultComparison.parse_data(
+#         "$(@__DIR__)/../data/output/ILS/cvrp-0-df-0.txt"
+#     ))
+#
+#     println()
+#     println("DONE PARSING")
+#     for (idx, content) in enumerate(content)
+#         println("Type $idx has content: $(content)")
+#     end
+# end
+#
+# test()
+
+
+
+# Instance has 4 type comparisons
+# each type has n algs (Name, value)
