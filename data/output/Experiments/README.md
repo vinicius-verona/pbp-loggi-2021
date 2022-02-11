@@ -2,7 +2,7 @@
 
 ## What is this directory for?
 * This directory contains all `TXT` files to be considered when comparing the Dynamic CVRP solution.
-* An experiment `TXT` file follows the format:
+* An experiment `TXT` file must have the string `-EXPER` in its name and follow the format:
 ```
 	[BLANK SPACE]
 	======> Start loading instance data

@@ -75,7 +75,8 @@ mutable struct Instance
 
 end
 
-_table_template(; cols_config::String = "", header::String = "", body)::String =
+export table_template
+table_template(; cols_config::String = "", header::String = "", body::String = "")::String =
 """
  \\begin{table}[]
      \\centering
@@ -128,6 +129,12 @@ function _compare_values(algorithms::Array{Algorithm,1})::Array{Data,1}
 end
 
 export parse_data
+"""
+For a given TXT file, extract comparison data and create an `Instance` object
+```julia
+julia>
+```
+"""
 function parse_data(filename::String)::Instance
 
     local instance = Instance()
@@ -173,6 +180,12 @@ function parse_data(filename::String)::Instance
 end
 
 export to_latex
+"""
+For a given instance, extract comparison data and convert into LaTex format string
+```julia
+julia>
+```
+"""
 function to_latex(instance::Instance)
 
     local latex_content = [] # Each position is a comparison type
@@ -191,10 +204,13 @@ function to_latex(instance::Instance)
             end, comparison.values, init=["","",""]
         )
 
+        _header *= "\\\\"
+        _body *= "\\\\"
+
         header *= _header
         body *= _body
         cols_config *= _cols
-        push!(latex_content, (header, cols_config, body))
+        push!(latex_content, (cols_config, header, body))
     end
 
     return latex_content
@@ -203,32 +219,42 @@ end
 
 end  # module Comparison
 
-
+import Dates
 function main()
 
-    local project_path = "$(@__DIR__)"
-    local results_path = "$project_path/data/output/"
-    local dirs = readdir(results_path)
+    local project_path = "$(@__DIR__)/.."
+    local experiment_path = "$project_path/data/output/Experiments/"
 
+    local id = string(Dates.now())
+    id = replace(id, r":" => "-")
+    id = replace(id, r"\.([0-9]*)" => "")
+    local experiments = filter(
+        x -> match(r"-EXPER", x) !== nothing,
+        readdir(experiment_path, join=true)
+    )
+
+    local filenames = [
+        "$project_path/Experiments/Time-Comparison-$id.txt",
+        "$project_path/Experiments/Distance-Comparison-$id.txt",
+        "$project_path/Experiments/Length-Comparison-$id.txt",
+        "$project_path/Experiments/GAP-Comparison-$id.txt"
+    ]
+    local files_ptr = [open(file, "a") for file in filenames]
+
+    for i in experiments
+        local content = ResultComparison.to_latex(ResultComparison.parse_data(i))
+
+        for (index, file) in enumerate(files_ptr)
+            write(file, ResultComparison.table_template(
+                cols_config = content[index][1],
+                header = content[index][2],
+                body = content[index][3]
+            ))
+        end
+    end
+
+    [close(file) for file in files_ptr]
 
 end
 
-
-# function test()
-#     content = ResultComparison.to_latex(ResultComparison.parse_data(
-#         "$(@__DIR__)/../data/output/ILS/cvrp-0-df-0.txt"
-#     ))
-#
-#     println()
-#     println("DONE PARSING")
-#     for (idx, content) in enumerate(content)
-#         println("Type $idx has content: $(content)")
-#     end
-# end
-#
-# test()
-
-
-
-# Instance has 4 type comparisons
-# each type has n algs (Name, value)
+main()
