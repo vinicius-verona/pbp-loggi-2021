@@ -112,12 +112,12 @@ function _compare_values(algorithms::Array{Algorithm,1})::Array{Data,1}
     local minimum = typemax(Float64)
     local best = nothing
 
-    foreach(_value -> begin
+    for _value in distance_type.values[begin:end-1]
         if (_value.second < minimum)
             minimum = _value.second
             best = _value
         end
-    end, distance_type.values[begin:end-1])
+    end
 
     # Calculate GAP variation
     gap_type.values[1] = best
