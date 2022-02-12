@@ -49,17 +49,23 @@ end
 
 mutable struct ExecStatistic
 
+    cluster_initial_timestamp::DateTime # Greedy Solution timestamp (Clustered)
+    cluster_completion_timestamp::DateTime # Greedy Solution timestamp (Clustered)
+
     solver_initial_timestamp::DateTime # Solver Solution timestamp
     solver_completion_timestamp::DateTime # Solver Solution timestamp
 
     lkh_initial_timestamp::DateTime # Solver + LKH Solution timestamp
     lkh_completion_timestamp::DateTime # Solver + LKH Solution timestamp
 
+    classic_initial_timestamp::DateTime # Solver + LKH Solution timestamp classic CVRP
+    classic_completion_timestamp::DateTime # Solver + LKH Solution timestamp classic CVRP
+
 end
 
 # CVRP Program
 export cvrp
-function cvrp(arguments::Argument; DEBUG::Bool=false)
+function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
 
     Random.seed!(arguments.seed)
 
@@ -80,11 +86,19 @@ function cvrp(arguments::Argument; DEBUG::Bool=false)
     #         Instance Solving         #
     #----------------------------------#
 
+    local classic_instance = deepcopy(instance)
+
     # Update INSTANCE_LENGTH variable
     global SLOT_COUNTER = 0
     global LAST_SLOT = false
     global INSTANCE_LENGTH = length(instance.deliveries)
-    local execution_stats = ExecStatistic(now(), now(), now(), now())
+    local execution_stats = ExecStatistic(
+        now(), now(),
+        now(), now(),
+        now(), now(),
+        now(), now()
+    )
+
 
     # Slot version solver solution
     println("\n======> Start Slotted solver solution")
@@ -112,13 +126,52 @@ function cvrp(arguments::Argument; DEBUG::Bool=false)
     println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, lkh_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.lkh_completion_timestamp)
 
+    local classic_solution::Array{Route, 1} = []
+    local cluster_solution::Array{Route, 1} = []
+    if (experiment)
+        global SLOT_COUNTER = 0
+        global SLOT_LENGTH = INSTANCE_LENGTH
+        global LAST_SLOT = false
+
+        # Cluster solution
+        println("\n======> Start Cluster solution")
+        execution_stats.cluster_initial_timestamp = now()
+        println("=> Start timestamp : ", execution_stats.cluster_initial_timestamp)
+
+        local model = train(instance.region)
+        cluster_solution = greedySolution(deepcopy(classic_instance), auxiliars, model)
+
+        execution_stats.cluster_completion_timestamp = now()
+        println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, cluster_solution)), " routes")
+        println("=> Compl. timestamp: ", execution_stats.classic_completion_timestamp)
+
+
+        # LKH + solver solution for classic CRVRP
+        println("\n======> Start classic CVRP solution")
+        execution_stats.classic_initial_timestamp = now()
+        println("=> Start timestamp : ", execution_stats.classic_initial_timestamp)
+
+        classic_solution = solve(classic_instance, auxiliars; exec_time = arguments.execution_time)
+        classic_solution = lkh(classic_solution, auxiliars)
+
+        execution_stats.classic_completion_timestamp = now()
+        println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, classic_solution)), " routes")
+        println("=> Compl. timestamp: ", execution_stats.classic_completion_timestamp)
+    end
+
+
     #----------------------------------#
     #         Instance Results         #
     #----------------------------------#
 
     println("\n======> Results (Distance in KM)")
-    println("Solved: ", sum(map(x -> x.distance, solver_solution)) / 1000)
-    println("LKH-3 : ", sum(map(x -> x.distance, lkh_solution)) / 1000)
+    if (experiment)
+        println("Classic : ", sum(map(x -> x.distance, classic_solution)) / 1000)
+        println("Cluster : ", sum(map(x -> x.distance, cluster_solution)) / 1000)
+    end
+
+    println("Solved  : ", sum(map(x -> x.distance, solver_solution)) / 1000)
+    println("LKH-3   : ", sum(map(x -> x.distance, lkh_solution)) / 1000)
     println()
 
     #-----------------------------------#
@@ -133,7 +186,7 @@ function cvrp(arguments::Argument; DEBUG::Bool=false)
     println()
 
     # Generate output
-    generateOutput(instance, lkh_solution; algorithm = "Slot", path="$(@__DIR__)/../../data/output/ILS/")
+    generateOutput(instance, solver_solution; algorithm = "Slot", path="$(@__DIR__)/../../data/output/ILS/")
     generateOutput(instance, lkh_solution; algorithm = "lkh", path="$(@__DIR__)/../../data/output/LKH/")
 
     #-------------------------------------#
@@ -216,6 +269,7 @@ function displayHelp()
     println("    [ --k-near -> -k ]  |>  Not Required  |> Set the number of stored delivery nearest adjacents")
     println("    [ --timer  -> -t ]  |>  Not Required  |> Set the heuristic execution time (Milliseconds)")
     println("    [ --DEBUG        ]  |>  Not Required  |> Set debug mode (Profiling)")
+    println("    [ --EXPER        ]  |>  Not Required  |> Set experiment mode (used to compare to the Classic CVRP)")
     println()
 
     println("-------------------------------- Execution Examples ---------------------------------")

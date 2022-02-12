@@ -1,5 +1,5 @@
-push!(LOAD_PATH, "src/SD-CVRP")
-push!(LOAD_PATH, "src/SD-CVRP/verifier/")
+push!(LOAD_PATH, "$(@__DIR__)/src/SD-CVRP")
+push!(LOAD_PATH, "$(@__DIR__)/src/SD-CVRP/verifier/")
 using PBP_Loggi
 
 """
@@ -9,7 +9,7 @@ using PBP_Loggi
 """
 main(ARGS) = begin
 
-    let args = ARGS, arguments = Argument(), debug=false
+    let args = ARGS, arguments = Argument(), debug=false, exper=false
 
         if (length(args) < 2)
             displayHelp()
@@ -28,15 +28,19 @@ main(ARGS) = begin
                 i += 1
 
             elseif (argument == "-t" || argument == "--timer")
-                arguments.execution_time = parse(Int64, args[i+1])
+                arguments.execution_time = parse(Float64, args[i+1])
                 i += 1
 
             elseif (argument == "-k" || argument == "--k-near")
                 arguments.k_nearest = parse(Int64, args[i+1])
                 i += 1
 
-            elseif (argument == "--DEBUG")
+            elseif (argument == "--debug")
                 debug = true
+                i += 1
+
+            elseif (argument == "--exper")
+                exper = true
                 i += 1
 
             elseif (argument == "--help" || argument == "-h")
@@ -49,7 +53,7 @@ main(ARGS) = begin
             throw("An input JSON file has not been passed as argument! See help using '-h' argument for more information")
         end
 
-        cvrp(arguments; DEBUG=debug)
+        cvrp(arguments; DEBUG=debug, experiment=exper)
 
     end
 
@@ -57,4 +61,10 @@ end
 
 if (!isinteractive())
     main(ARGS)
+else
+    println()
+    print("What are the execution arguments: ")
+    local arguments = split(readline(), " ")
+    main(arguments)
 end
+# -s 1 -i data/input/train/rj-5/cvrp-5-rj-89.json -t 9e4 -k 20 --EXPER
