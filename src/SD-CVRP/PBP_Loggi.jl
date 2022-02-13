@@ -49,6 +49,9 @@ end
 
 mutable struct ExecStatistic
 
+    cw_initial_timestamp::DateTime # Greedy Solution timestamp (Clustered)
+    cw_completion_timestamp::DateTime # Greedy Solution timestamp (Clustered)
+
     cluster_initial_timestamp::DateTime # Greedy Solution timestamp (Clustered)
     cluster_completion_timestamp::DateTime # Greedy Solution timestamp (Clustered)
 
@@ -96,6 +99,7 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
         now(), now(),
         now(), now(),
         now(), now(),
+        now(), now(),
         now(), now()
     )
 
@@ -126,12 +130,28 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
     println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, lkh_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.lkh_completion_timestamp)
 
+
+    #-----------------------------------#
+    #            Experiments            #
+    #-----------------------------------#
+
     local classic_solution::Array{Route, 1} = []
     local cluster_solution::Array{Route, 1} = []
+    local cw_solution::Array{Route, 1} = []
+
     if (experiment)
         global SLOT_COUNTER = 0
-        global SLOT_LENGTH = INSTANCE_LENGTH
         global LAST_SLOT = false
+        # Clarke-Wright solution
+        println("\n======> Start Clarke-Wright solution")
+        execution_stats.cw_initial_timestamp = now()
+        println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
+
+        cw_solution = solve(deepcopy(classic_instance), auxiliars, exper=true)
+
+        execution_stats.cw_completion_timestamp = now()
+        println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, cw_solution)), " routes")
+        println("=> Compl. timestamp: ", execution_stats.cw_completion_timestamp)
 
         # Cluster solution
         println("\n======> Start Cluster solution")
@@ -139,7 +159,7 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
         println("=> Start timestamp : ", execution_stats.cluster_initial_timestamp)
 
         local model = train(instance.region, except=classic_instance.name * ".json")
-        cluster_solution = greedySolution(deepcopy(classic_instance), auxiliars, model)
+        cluster_solution = greedySolution(deepcopy(classic_instance), auxiliars, model, slot=SLOT_LENGTH)
 
         execution_stats.cluster_completion_timestamp = now()
         println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, cluster_solution)), " routes")
@@ -165,9 +185,10 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
     #----------------------------------#
 
     println("\n======> Results (Distance in KM)")
-    println("Solved  : ", sum(map(x -> x.distance, solver_solution)) / 1000)
-    println("LKH-3   : ", sum(map(x -> x.distance, lkh_solution)) / 1000)
+    println("Solved: ", sum(map(x -> x.distance, solver_solution)) / 1000)
+    println("LKH-3 : ", sum(map(x -> x.distance, lkh_solution)) / 1000)
     if (experiment)
+        println("Clarke-Wright : ", sum(map(x -> x.distance, cw_solution)) / 1000)
         println("Cluster : ", sum(map(x -> x.distance, cluster_solution)) / 1000)
         println("Classic : ", sum(map(x -> x.distance, classic_solution)) / 1000)
     end
@@ -182,6 +203,17 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
     verify(auxiliar = auxiliars, solution = solver_solution)
     println("\n\n======> Verifying Solver + LKH Solution <======")
     verify(auxiliar = auxiliars, solution = lkh_solution)
+
+    if (experiment)
+        println("\n\n======> Verifying Clarke-Wright Solution <======")
+        verify(auxiliar = auxiliars, solution = cw_solution)
+
+        println("\n\n======> Verifying Cluster Solution <======")
+        verify(auxiliar = auxiliars, solution = cluster_solution)
+
+        println("\n\n======> Verifying Classic CVRP Solution <======")
+        verify(auxiliar = auxiliars, solution = classic_solution)
+    end
     println()
 
     # Generate output
@@ -208,7 +240,7 @@ Apply initial algorithm and then a heuristic method in order to solve DCVRP.
 * `Clarke-Wright` - Initial Algorithm
 * `Iterated Local-Search (ILS)` - Heuristic Algorithm (improvement step)
 """
-function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route,1}} = nothing, exec_time::Real=9e5)
+function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller{Array{Route,1}} = nothing, exec_time::Real=9e5, exper::Bool=false)
 
     global SLOT_COUNTER += 1
     local current_slot = SLOT_COUNTER * SLOT_LENGTH
@@ -223,14 +255,18 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
     if (solution !== nothing)
         solution = clarkeWrightSolution(instance, auxiliar, deliveries; solution = solution)
 
-        local time = Int(round((exec_time * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
-        solution = ils(auxiliar, solution, deliveries; execution_time=time)
+        if (!exper)
+            local time = Int(round((exec_time * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+            solution = ils(auxiliar, solution, deliveries; execution_time=time)
+        end
 
     else
         solution = clarkeWrightSolution(instance, auxiliar, deliveries)
 
-        local time = Int(round((exec_time * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
-        solution = ils(auxiliar, solution, deliveries; execution_time=time)
+        if (!exper)
+            local time = Int(round((exec_time * SLOT_LENGTH) / length(instance.deliveries), RoundUp))
+            solution = ils(auxiliar, solution, deliveries; execution_time=time)
+        end
     end
 
     fixAssignment!(solution, deliveries)
@@ -239,7 +275,7 @@ function solve(instance::CvrpData, auxiliar::CvrpAuxiliars; solution::Controller
         return solution
     end
 
-    return solve(instance, auxiliar; solution = solution, exec_time = exec_time)
+    return solve(instance, auxiliar; solution = solution, exec_time = exec_time, exper = exper)
 
 end
 

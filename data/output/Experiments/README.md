@@ -22,6 +22,11 @@
 	=> # of vehicles   : [SOLUTION_LENGTH] routes
 	=> Compl. timestamp: [YYYY-MM-DDTH:M:S.MS]
 
+	======> Start Clarke-Wright solution
+	=> Start timestamp : [YYYY-MM-DDTH:M:S.MS]
+	=> # of vehicles   : [SOLUTION_LENGTH] routes
+	=> Compl. timestamp: [YYYY-MM-DDTH:M:S.MS]
+
 	======> Start Train + Cluster Greedy solution
 	=> Start timestamp : [YYYY-MM-DDTH:M:S.MS]
 	=> # of vehicles   : [SOLUTION_LENGTH] routes
@@ -33,8 +38,10 @@
 	=> Compl. timestamp: [YYYY-MM-DDTH:M:S.MS]
 
 	======> Results (Distance in KM)
-	Classic : [SOLUTION_VALUE]
+	Solver: [SOLUTION_VALUE]
+	LKH-3 : [SOLUTION_VALUE]
+	Clarke-Wright : [SOLUTION_VALUE]
 	Cluster : [SOLUTION_VALUE]
-	Solver  : [SOLUTION_VALUE]
-	LKH-3   : [SOLUTION_VALUE]
+	Classic : [SOLUTION_VALUE]
 ```
+* PS: The execution order must match the results order, therefore, it can be changed. The only restriction is the classic CVRP result and execution. It must be the last
