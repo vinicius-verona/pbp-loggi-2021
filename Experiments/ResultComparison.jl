@@ -53,12 +53,13 @@ mutable struct Algorithm
 end
 
 ComparisonData = TypeNull{Pair{String,Real}}
-mutable struct Data
+mutable struct Data{T}
 
     comparison_type::String
-    values::Array{ComparisonData,1}
+    values::Array{TypeNull{T},1}
 
-    Data(type::String; cols::Int64 = 0) = new(type, Array{ComparisonData,1}(nothing, cols))
+    Data{T}(type::String; cols::Int64 = 0) where {T} =
+        new(type, Array{T,1}(nothing, cols))
 
 end
 
@@ -78,19 +79,19 @@ end
 export table_template
 table_template(; cols_config::String = "", header::String = "", body::String = "")::String =
 """
- \\begin{table}[]
-     \\centering
+\\begin{table}[]
+    \\centering
 
-     \\begin{tabular}{$cols_config}
-         \\toprule
-         $header
+    \\begin{tabular}{$cols_config}
+        \\toprule
+        $header
 
-         \\hline
-         $body
+        \\hline
+        $body
 
-         \\bottomrule
-     \\end{tabular}
- \\end{table}
+        \\bottomrule
+    \\end{tabular}
+\\end{table}
 """
 
 _calculate_gap(; best::Real, solution::Real) = (solution - best) / best
@@ -98,10 +99,10 @@ _calculate_gap(; best::Real, solution::Real) = (solution - best) / best
 # The classic CVRP solution parsed as `::Algorithm` must be the last element of `algorithms`
 function _compare_values(algorithms::Array{Algorithm,1})::Array{Data,1}
 
-    local time_type = Data("time", cols = length(algorithms))
-    local distance_type = Data("distance", cols = length(algorithms))
-    local length_type = Data("length", cols = length(algorithms))
-    local gap_type = Data("gap", cols = 2)
+    local time_type = Data{ComparisonData}("time", cols = length(algorithms))
+    local distance_type = Data{ComparisonData}("distance", cols = length(algorithms))
+    local length_type = Data{ComparisonData}("length", cols = length(algorithms))
+    local gap_type = Data{ComparisonData}("gap", cols = 2)
 
     for (index, alg) in enumerate(algorithms)
         time_type.values[index] = Pair(alg.name, Dates.value(alg.stop - alg.start) / 1000)
@@ -111,11 +112,13 @@ function _compare_values(algorithms::Array{Algorithm,1})::Array{Data,1}
 
     local minimum = typemax(Float64)
     local best = nothing
+    local alg = ""
 
     for _value in distance_type.values[begin:end-1]
         if (_value.second < minimum)
             minimum = _value.second
             best = _value
+            alg = _value.first
         end
     end
 
@@ -139,7 +142,7 @@ function parse_data(filename::String)::Instance
 
     local instance = Instance()
     local algorithms::Array{Algorithm,1} = []
-    local LAST_ALGORITHM = 20
+    local LAST_ALGORITHM = 25
 
     let file = readlines(open(filename, "r"))
         local pattern = r" *\.*" # Remove space and . from the name
@@ -189,23 +192,31 @@ julia>
 function to_latex(instance::Instance)
 
     local latex_content = [] # Each position is a comparison type
+    local counter = 1
 
     for comparison in instance.comparisons
         local header = "Instance "
         local cols_config = "c"
         local body = "$(instance.name) "
+        counter += 1
 
         local _header, _body, _cols = reduce(
             (acc, value) -> begin
-                acc[1] *= ("& " * value.first * " ")
-                acc[2] *= "&  $(value.second) "
+                if (comparison.comparison_type == "gap")
+                    acc[1] *= ("& Algorithm & " * value.first * " ")
+                    acc[2] *= "& $(value.first) & $(value.second) "
+                else
+                    acc[1] *= ("& " * value.first * " ")
+                    acc[2] *= "&  $(value.second) "
+                end
+
                 acc[3] *= "|c"
                 return acc
             end, comparison.values, init=["","",""]
         )
 
-        _header *= "\\\\"
-        _body *= "\\\\"
+        _header *= "\\\\ \n"
+        _body *= "\\\\ \n\t\t"
 
         header *= _header
         body *= _body
@@ -241,16 +252,28 @@ function main()
     ]
     local files_ptr = [open(file, "a") for file in filenames]
 
+    local cols_cfg = ["" for _ in filenames]
+    local headers = ["" for _ in filenames]
+    local bodies = ["" for _ in filenames]
+
     for i in experiments
         local content = ResultComparison.to_latex(ResultComparison.parse_data(i))
 
-        for (index, file) in enumerate(files_ptr)
-            write(file, ResultComparison.table_template(
-                cols_config = content[index][1],
-                header = content[index][2],
-                body = content[index][3]
-            ))
+        for index = 1:length(filenames)
+            # print(content[index][1])
+            # exit()
+            cols_cfg[index] = content[index][1]
+            headers[index] = content[index][2]
+            bodies[index] *= content[index][3]
         end
+    end
+
+    for (index, file) in enumerate(files_ptr)
+        write(file, ResultComparison.table_template(
+            cols_config = cols_cfg[index],
+            header = headers[index],
+            body = bodies[index],
+        ))
     end
 
     [close(file) for file in files_ptr]

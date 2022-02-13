@@ -12,17 +12,17 @@
 	=> Instance # of deliveries   : [INSTANCE_SIZE]
 	=> Instance min # of vehicles : [MINIMUM_SOLUTION_LENGTH]
 
-	======> Start Train + Cluster Greedy solution
+	======> Start Slotted Solver solution
 	=> Start timestamp : [YYYY-MM-DDTH:M:S.MS] (# DateTime format)
 	=> # of vehicles   : [SOLUTION_LENGTH] routes
 	=> Compl. timestamp: [YYYY-MM-DDTH:M:S.MS]
 
-	======> Start Slotted Solver solution
+	======> Start Pos-Heuristic reordering solution
 	=> Start timestamp : [YYYY-MM-DDTH:M:S.MS]
 	=> # of vehicles   : [SOLUTION_LENGTH] routes
 	=> Compl. timestamp: [YYYY-MM-DDTH:M:S.MS]
 
-	======> Start Pos-Heuristic reordering solution
+	======> Start Train + Cluster Greedy solution
 	=> Start timestamp : [YYYY-MM-DDTH:M:S.MS]
 	=> # of vehicles   : [SOLUTION_LENGTH] routes
 	=> Compl. timestamp: [YYYY-MM-DDTH:M:S.MS]
@@ -33,8 +33,8 @@
 	=> Compl. timestamp: [YYYY-MM-DDTH:M:S.MS]
 
 	======> Results (Distance in KM)
-	Clustered: [SOLUTION_VALUE]
-	Solver: [SOLUTION_VALUE]
-	LKH-3 : [SOLUTION_VALUE]
-	CVRP  : [SOLUTION_VALUE]
+	Classic : [SOLUTION_VALUE]
+	Cluster : [SOLUTION_VALUE]
+	Solver  : [SOLUTION_VALUE]
+	LKH-3   : [SOLUTION_VALUE]
 ```

@@ -138,12 +138,12 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
         execution_stats.cluster_initial_timestamp = now()
         println("=> Start timestamp : ", execution_stats.cluster_initial_timestamp)
 
-        local model = train(instance.region)
+        local model = train(instance.region, except=classic_instance.name * ".json")
         cluster_solution = greedySolution(deepcopy(classic_instance), auxiliars, model)
 
         execution_stats.cluster_completion_timestamp = now()
         println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, cluster_solution)), " routes")
-        println("=> Compl. timestamp: ", execution_stats.classic_completion_timestamp)
+        println("=> Compl. timestamp: ", execution_stats.cluster_completion_timestamp)
 
 
         # LKH + solver solution for classic CRVRP
@@ -165,13 +165,12 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
     #----------------------------------#
 
     println("\n======> Results (Distance in KM)")
-    if (experiment)
-        println("Classic : ", sum(map(x -> x.distance, classic_solution)) / 1000)
-        println("Cluster : ", sum(map(x -> x.distance, cluster_solution)) / 1000)
-    end
-
     println("Solved  : ", sum(map(x -> x.distance, solver_solution)) / 1000)
     println("LKH-3   : ", sum(map(x -> x.distance, lkh_solution)) / 1000)
+    if (experiment)
+        println("Cluster : ", sum(map(x -> x.distance, cluster_solution)) / 1000)
+        println("Classic : ", sum(map(x -> x.distance, classic_solution)) / 1000)
+    end
     println()
 
     #-----------------------------------#

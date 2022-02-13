@@ -18,9 +18,10 @@ Generates a greedy initial solution by first selecting those deliveries with gre
 **Returns:**
 * Array of `Route`, each containing different deliveries to be attended by the route.
 """
-function greedySolution(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, model::Model)
-    
+function greedySolution(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, model::Model; slot::Int64=0)
+
     local routes::Array{Route, 1} = []
+
     foreach(delivery -> begin
 
         local centroid::Point = predict(model.centroids, delivery)
@@ -39,11 +40,10 @@ function greedySolution(instance::CvrpData, cvrp_auxiliars::CvrpAuxiliars, model
         else
             local route, position = findBestRoute(:Extremes, cvrp_auxiliars, possible_routes, delivery)
             pushDelivery!(cvrp_auxiliars, route, delivery, position)
-            
         end
-        
+
     end, instance.deliveries)
-    
+
     return routes
 
 end

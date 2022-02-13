@@ -17,36 +17,25 @@ to service a client.
 In case there is an instance between `initial_day` and `limit_day` that should not be considered,
 use the `except::Int64` parameter.
 """
-function train(region::String="df-0"; initial_day::Int64=0, limit_day::Int64=89, except::Int64=0)
-    
+function train(region::String="df-0"; except::String="")
+
     # Load directory
     local train_dir   = "$(@__DIR__)/../../data/input/train/$region"
     local train_files = readdir(train_dir, sort=true)
     local inverse_region = "$(split(region, "-")[2])-$(split(region, "-")[1])"
 
-    function deleteInstance(day::String)
-        local removed_json = split(day, ".json")[1]
-        day = split(removed_json, "cvrp-$inverse_region-")[2]
-        
-        local lt = parse(Int64, day) < initial_day
-        local gt = parse(Int64, day) > limit_day
-        local eq = parse(Int64, day) == except
-
-        return (lt || gt || eq)
-    end
-
     # Remove instance before initial day and after limit day
     local counter = 1
     for _ = 1:length(train_files)
-        
-        if (deleteInstance(train_files[counter]))
+
+        if (train_files[counter] == except)
             local position = findfirst(x->x==train_files[counter], train_files)
             deleteat!(train_files, position)
 
         else
             counter += 1
         end
-        
+
     end
 
     # Read instance and store points
@@ -89,12 +78,12 @@ For a given delivery, predict in which clustered region does the delivery belong
 
     local center::Point = Point(0.0, 0.0)
     local min_dist = typemax(Float64)
-    
+
     foreach(centroid -> begin
         local dist = getDistance(centroid, delivery.point)
         (dist < min_dist) ? (center = centroid; min_dist = dist) : nothing
     end, centroids)
-    
+
     return center
 
 end
@@ -126,13 +115,13 @@ function extractCentroids(matrix::Array{Float64, 2})
 
     local centroids = Array{Point, 1}()
     local length = size(matrix)[2]
-    
+
     for i = 1:length
         push!(centroids, Point(matrix[2,i], matrix[1,i]))
     end
 
     return centroids
-    
+
 end
 
 end # module
