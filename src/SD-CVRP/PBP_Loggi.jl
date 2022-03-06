@@ -103,7 +103,7 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
         now(), now()
     )
 
-
+#=
     # Slot version solver solution
     println("\n======> Start Slotted solver solution")
     execution_stats.solver_initial_timestamp = now()
@@ -129,7 +129,7 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
     execution_stats.lkh_completion_timestamp = now()
     println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, lkh_solution)), " routes")
     println("=> Compl. timestamp: ", execution_stats.lkh_completion_timestamp)
-
+=#
 
     #-----------------------------------#
     #            Experiments            #
@@ -142,31 +142,32 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
     if (experiment)
         global SLOT_COUNTER = 0
         global LAST_SLOT = false
-        # Clarke-Wright solution
-        println("\n======> Start Clarke-Wright solution")
-        execution_stats.cw_initial_timestamp = now()
-        println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
-
-        cw_solution = solve(deepcopy(classic_instance), auxiliars, exper=true)
-
-        execution_stats.cw_completion_timestamp = now()
-        println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, cw_solution)), " routes")
-        println("=> Compl. timestamp: ", execution_stats.cw_completion_timestamp)
-
-        # Cluster solution
-        println("\n======> Start Cluster solution")
-        execution_stats.cluster_initial_timestamp = now()
-        println("=> Start timestamp : ", execution_stats.cluster_initial_timestamp)
-
-        local model = train(instance.region, except=classic_instance.name * ".json")
-        cluster_solution = greedySolution(deepcopy(classic_instance), auxiliars, model, slot=SLOT_LENGTH)
-
-        execution_stats.cluster_completion_timestamp = now()
-        println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, cluster_solution)), " routes")
-        println("=> Compl. timestamp: ", execution_stats.cluster_completion_timestamp)
+        # # Clarke-Wright solution
+        # println("\n======> Start Clarke-Wright solution")
+        # execution_stats.cw_initial_timestamp = now()
+        # println("=> Start timestamp : ", execution_stats.cw_initial_timestamp)
+        #
+        # cw_solution = solve(deepcopy(classic_instance), auxiliars, exper=true)
+        #
+        # execution_stats.cw_completion_timestamp = now()
+        # println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, cw_solution)), " routes")
+        # println("=> Compl. timestamp: ", execution_stats.cw_completion_timestamp)
+        #
+        # # Cluster solution
+        # println("\n======> Start Cluster solution")
+        # execution_stats.cluster_initial_timestamp = now()
+        # println("=> Start timestamp : ", execution_stats.cluster_initial_timestamp)
+        #
+        # local model = train(instance.region, except=classic_instance.name * ".json")
+        # cluster_solution = greedySolution(deepcopy(classic_instance), auxiliars, model, slot=SLOT_LENGTH)
+        #
+        # execution_stats.cluster_completion_timestamp = now()
+        # println("=> # of vehicles   : ", length(filter!(r -> length(r.deliveries) > 2, cluster_solution)), " routes")
+        # println("=> Compl. timestamp: ", execution_stats.cluster_completion_timestamp)
 
 
         # LKH + solver solution for classic CRVRP
+        global SLOT_LENGTH = length(classic_instance.deliveries)
         println("\n======> Start classic CVRP solution")
         execution_stats.classic_initial_timestamp = now()
         println("=> Start timestamp : ", execution_stats.classic_initial_timestamp)
@@ -185,11 +186,11 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
     #----------------------------------#
 
     println("\n======> Results (Distance in KM)")
-    println("Solved: ", sum(map(x -> x.distance, solver_solution)) / 1000)
-    println("LKH-3 : ", sum(map(x -> x.distance, lkh_solution)) / 1000)
+    # println("Solver: ", sum(map(x -> x.distance, solver_solution)) / 1000)
+    # println("LKH-3 : ", sum(map(x -> x.distance, lkh_solution)) / 1000)
     if (experiment)
-        println("Clarke-Wright : ", sum(map(x -> x.distance, cw_solution)) / 1000)
-        println("Cluster : ", sum(map(x -> x.distance, cluster_solution)) / 1000)
+        # println("Clarke-Wright : ", sum(map(x -> x.distance, cw_solution)) / 1000)
+        # println("Cluster : ", sum(map(x -> x.distance, cluster_solution)) / 1000)
         println("Classic : ", sum(map(x -> x.distance, classic_solution)) / 1000)
     end
     println()
@@ -199,10 +200,10 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
     #-----------------------------------#
 
     # Verify solution
-    println("\n\n======> Verifying Solver Solution <======")
-    verify(auxiliar = auxiliars, solution = solver_solution)
-    println("\n\n======> Verifying Solver + LKH Solution <======")
-    verify(auxiliar = auxiliars, solution = lkh_solution)
+    # println("\n\n======> Verifying Solver Solution <======")
+    # verify(auxiliar = auxiliars, solution = solver_solution)
+    # println("\n\n======> Verifying Solver + LKH Solution <======")
+    # verify(auxiliar = auxiliars, solution = lkh_solution)
 
     if (experiment)
         println("\n\n======> Verifying Clarke-Wright Solution <======")
@@ -217,8 +218,8 @@ function cvrp(arguments::Argument; DEBUG::Bool=false, experiment::Bool=false)
     println()
 
     # Generate output
-    generateOutput(instance, solver_solution; algorithm = "Slot", path="$(@__DIR__)/../../data/output/ILS/")
-    generateOutput(instance, lkh_solution; algorithm = "lkh", path="$(@__DIR__)/../../data/output/LKH/")
+    # generateOutput(instance, solver_solution; algorithm = "Slot", path="$(@__DIR__)/../../data/output/ILS/")
+    # generateOutput(instance, lkh_solution; algorithm = "lkh", path="$(@__DIR__)/../../data/output/LKH/")
 
     #-------------------------------------#
     #             DEBUG STATS             #

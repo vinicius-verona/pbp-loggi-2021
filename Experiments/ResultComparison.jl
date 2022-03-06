@@ -142,7 +142,7 @@ function parse_data(filename::String)::Instance
 
     local instance = Instance()
     local algorithms::Array{Algorithm,1} = []
-    local LAST_ALGORITHM = 25
+    local LAST_ALGORITHM = 30
 
     let file = readlines(open(filename, "r"))
         local pattern = r" *\.*" # Remove space and . from the name
@@ -163,6 +163,7 @@ function parse_data(filename::String)::Instance
             alg.stop = parse(Dates.DateTime, replace(split(file[line+2], ": ")[2], pattern => ""))
 
             pattern = r"([0-9]++\.?)++"
+            # println("Line: ", value, " - ", file[value])
             alg.length = parse(Int64, match(pattern, split(file[line+1], ": ")[2]).match)
             alg.value = parse(Float64, match(pattern, split(file[value], ": ")[2]).match)
 
